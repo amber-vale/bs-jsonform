@@ -1,0 +1,206 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>Bootstrap 4 JSON Form</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+        <style>
+            pre {
+                background: rgba(0,0,0,0.1);
+                padding: 5px;
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Nav -->
+        <nav class="navbar fixed-top navbar-dark bg-primary">
+            <span class="navbar-brand mb-0 h1">Bootstrap 4 JSON Form</span>
+            <span class="navbar-text">
+                <a href="test.html" class="mr-3">Demos</a>
+                <!-- By <a href="https://github.com/ambersnow">Amber</a> -->
+            </span>
+        </nav>
+
+        <!-- Content -->
+        <div style="height: 15vh"></div>
+        <div class="container">
+
+            <a href="test.html"><h2>Demo</h2></a>
+
+            <h2 class="mt-5">JSON</h2>
+
+            <h4 class="mt-3 mb-3">Top level</h4>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Key</th>
+                        <th scope="col">Values</th>
+                        <th scope="col">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>fields</code><br /><b>Mandatory</b></td>
+                        <td><a href="#fields_key">Array of Fields</a><br /><i>String</i></td>
+                        <td>The array of objects containing the fields configuration</td>
+                    </tr>
+                    <tr>
+                        <td><code>submit_button_text</code><br />Default: <i>Submit</i></td>
+                        <td>Button text<br /><i>String</i></td>
+                        <td>The text to display on the submit button.</td>
+                    </tr>
+                    <tr>
+                        <td><code>cancel_button_text</code><br />Default: <i>Cancel</i></td>
+                        <td>Button text<br /><i>String</i></td>
+                        <td>The text to display on the cancel button.</td>
+                    </tr>
+                    <tr>
+                        <td><code>hide_validation</code><br />Default: <i>true</i></td>
+                        <td>true/false<br /><i>Boolean</i></td>
+                        <td>Whether or not to show the valid state on inputs.</td>
+                    </tr>
+                    <tr>
+                        <td><code>form_controls_id</code><br /><i>Automatically generated</i></td>
+                        <td>An Element ID<br /><i>String</i></td>
+                        <td>JsonForm automatically handles specifying and creating the IDs needed for Form generation.<br />If you want to override the placement of the Form Controls, use this key.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <a id="fields_key"></a>
+            <h4 class="mt-3 mb-3">Fields key</h4>
+
+            <p>The entire Fields key is an array of objects. The various configuration keys of the object is outlined below. The fields will be inserted in the order they are in the array.</p>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Key</th>
+                        <th scope="col">Values</th>
+                        <th scope="col">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>id</code><br /><b>Mandatory</b></td>
+                        <td>field_id<br /><i>String</i></td>
+                        <td>The ID for this field which will be used on the generated response payload</td>
+                    </tr>
+                    <tr>
+                        <td><code>name</code><br /><b>Mandatory</b></td>
+                        <td>Field Name<br /><i>String</i></td>
+                        <td>Display name of the field that will be shown to the user</td>
+                    </tr>
+                    <tr>
+                        <td><code>type</code><br /><b>Mandatory</b></td>
+                        <td>field, html, value<br /><i>String</i></td>
+                        <td>The type of field. <code>field</code>: An input field, specify parameters in <code>field</code> key. <code>html</code>: Injects HTML, <code>value</code>: stores a value to return in response</td>
+                    </tr>
+                    <tr>
+                        <td><code>field</code><br /><b>Mandatory for <code>type=field</code></b></td>
+                        <td><a href="#field_keys">Field keys</a><br /><i>Object</i></td>
+                        <td>The configuration object for the Field type</td>
+                    </tr>
+                    <tr>
+                        <td><code>html</code><br /><b>Mandatory for <code>type=html</code></b></td>
+                        <td>HTML<br /><i>String</i></td>
+                        <td>The HTML to inject</td>
+                    </tr>
+                    <tr>
+                        <td><code>value</code><br /><b>Mandatory for <code>type=value</code></b></td>
+                        <td>Anything<br /><i>Anything</i></td>
+                        <td>The value to store only to return in the response</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <a id="field_keys"></a>
+            <h4 class="mt-3 mb-3">Field keys</h4>
+
+            <p>The configuration keys to use when building a field object within the top level object <code>fields</code>.</p>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Key</th>
+                        <th scope="col">Values</th>
+                        <th scope="col">Default</th>
+                        <th scope="col">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>type</code></td>
+                        <td><a href="https://www.w3schools.com/html/html_form_input_types.asp">Input type</a><br /><i>String</i></td>
+                        <td><code>text</code></td>
+                        <td>The type of input to use for this field</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>required</code></td>
+                        <td>true/false<br /><i>Boolean</i></td>
+                        <td>true</td>
+                        <td>Whether or not this field is required</td>
+                    </tr>
+                    
+                    <tr>
+                        <td><code>readonly</code></td>
+                        <td>true/false<br /><i>Boolean</i></td>
+                        <td>false</td>
+                        <td>Whether or not this field is read only</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>options</code><br /><b>Mandatory for <code>type=select</code> or <code>type=radio</code></b></td>
+                        <td>Array of options<br /><i>Array</i></td>
+                        <td>[]</td>
+                        <td>All the options to display for an select/radio input</td>
+                    </tr>
+  
+                    <tr>
+                        <td><code>placeholder</code></td>
+                        <td>Anything<br /><i>String</i></td>
+                        <td>None</td>
+                        <td>The value to show in the placeholder</td>
+                    </tr>
+                    
+                    <tr>
+                        <td><code>default_value</code></td>
+                        <td>Anything<br /><i>String</i></td>
+                        <td>None</td>
+                        <td>The value to prefill the field with</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>use_validate_callback</code></td>
+                        <td>true/false<br /><i>Boolean</i></td>
+                        <td>false</td>
+                        <td>Whether or not to use specified validate_callback to validate the value on input</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            
+            <h2 class="mt-5">Methods</h2>
+
+            <h4 class="mt-3 mb-3"><code>JsonForm.create(FormID, FormJSON, FormName)</code></h4>
+
+            <p><b><code>FormID</code></b>: the selector to place the form within.</p>
+            <p><b><code>FormJSON</code></b>: the JSON payload (based on the above keys) to use when creating the form.</p>
+            <p><b><code>FormName</code> Optional</b>: the form instance name. By default is "default" &ndash; only use when you have multiple forms on the same page.</p>
+
+            <h4 class="mt-3 mb-3"><code>JsonForm.registerSubmit(SubmitHandler, FormName)</code></h4>
+
+            <p><b><code>SubmitHandler</code></b>: the submit handler to fire. It must be a function that accepts 2 arguments: <code>formValid, formData</code>. Check <code>formValid</code> (boolean) for the status of the form. If one or more fields fail validation, it will be <code>false</code>, otherwise it is true. <code>formData</code> is an object containing the field IDs and the values submitted.</p>
+            <p><b><code>FormName</code> Optional</b>: the form instance name. By default is "default" &ndash; only use when you have multiple forms on the same page.</p>
+
+
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    </body>
+</html>
