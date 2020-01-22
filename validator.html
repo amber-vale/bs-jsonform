@@ -1,0 +1,122 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>Bootstrap 4 JSON Form - Validator</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+        <style>
+            pre {
+                background: rgba(0,0,0,0.1);
+                padding: 5px;
+                border-radius: 10px;
+                white-space: pre-wrap;       /* css-3 */
+                white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                white-space: -pre-wrap;      /* Opera 4-6 */
+                white-space: -o-pre-wrap;    /* Opera 7 */
+                word-wrap: break-word; 
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Nav -->
+        <nav class="navbar fixed-top navbar-dark bg-primary">
+            <span class="navbar-brand mb-0 h1">Bootstrap 4 JSON Form</span>
+            <span class="navbar-text">
+                <a href="index.html" class="mr-3">Home</a>
+                <a href="test.html" class="mr-3">Demos</a>
+                <!-- By <a href="https://github.com/ambersnow">Amber</a> -->
+            </span>
+        </nav>
+
+        <!-- Content -->
+        <div style="height: 15vh"></div>
+        <div class="container">
+
+            <h2>Validator</h2>
+
+            <div class="row mt-5">
+
+                <div class="col-12 col-md-6">
+
+                    <h5>Enter the JSON to test</h5>
+                    <div class="form-group">
+                        <label for="jsonInput">Form JSON</label>
+                        <textarea class="form-control" id="jsonInput" rows="10"></textarea>
+                    </div>
+
+                    <button onclick="validate()" class="btn btn-primary">Validate</button>
+
+                </div>
+
+                <div class="col-12 col-md-6">
+
+                    <h5>Form</h5>
+                    <div id="Form1"><p>Enter some JSON then hit Validate.</p></div>
+
+                    <h5 class="mt-5">Data</h5>
+                    <p>Upon submission, your Submit Handler will be called with a (boolean, object) arguments. Submit the form above to see the object below.</p>
+                    <pre id="Form1Data">Submit the form to see data</pre>
+
+                </div>
+
+            </div>
+
+            
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    
+        <script src="bs-jsonform.js"></script>
+        <script>
+            $(function() {
+                window.jsonForm = new JsonForm()
+                var Payload = {
+    hide_validation: false,
+    button_orientation: "left",
+    fields: [
+        {
+            id: "name",
+            name: "What is your name?",
+            type: "field",
+            field: {
+                type: "text",
+                placeholder: "Name",
+                default_value: "Bob Smith",
+                helptext: "Any preferred name"
+            }
+        },
+        {
+            id: "color",
+            name: "What is your favorite color?",
+            type: "field",
+            field: {
+                type: "color",
+                placeholder: "Color"
+            }
+        }
+    ]
+}
+
+                $("#jsonInput").val(JSON.stringify(Payload, null, 2))
+                validate()
+            })
+
+            function validate() {
+                var json = $("#jsonInput").val()
+                window.jsonForm.destroy("Form1")
+                window.jsonForm.create("#Form1", JSON.parse(json), "Form1")
+                window.jsonForm.registerSubmit(Form1Handler, "Form1")
+            }
+
+            function Form1Handler(valid, data) {
+                if(valid) {
+                    $("#Form1Data").text(JSON.stringify(data, null, 2))
+                } else {
+                    $("#Form1Data").text("Form is NOT VALID. Did you fill out all fields?")
+                }
+            }
+        </script>
+    </body>
+</html>

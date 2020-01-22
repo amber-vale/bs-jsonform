@@ -50,6 +50,17 @@ class JsonForm {
         this.formInstances[instance].SubmitHandler = callback
     }
 
+    destroy(instance="default") {
+        if(!(instance in this.formInstances)) {
+            console.error("Instance "+instance+" has not been initialized")
+            return false
+        }
+
+        var formInstance = this.formInstances[instance]
+        $(formInstance.FormID).remove()
+
+    }
+
     // Initializes the form body
     // parent: parent ID
     // instance: the form instance, as lived in this.formInstances
@@ -218,6 +229,11 @@ class JsonForm {
             }
         }
 
+        // Determine sizing class
+        var sizeClass = ""
+        if (json.field.size == "large"){sizeClass = "form-control-lg"}
+        if (json.field.size == "small"){sizeClass = "form-control-sm"}
+
         // Build DOM
         switch (json.field.type) {
             // Generate switch
@@ -274,7 +290,7 @@ class JsonForm {
                 template = `<div class="col-`+json.field.width+`">
                 <div class="mt-3">
                     <p class="mb-2 mt-0">`+json.name+`</p>
-                    <select class="custom-select" id="`+id+`">    
+                    <select class="custom-select `+sizeClass+`" id="`+id+`">    
                 `
 
                 json.field.optionskeys.forEach((item, index) => {
@@ -291,9 +307,10 @@ class JsonForm {
                 break
             case "file":
                 template = `
-                <div class="col-`+json.field.width+`">
-                <div class="custom-file mt-3">
-                    <input type="file" class="custom-file-input" id="`+id+`">
+                <div class="col-`+json.field.width+` mt-3">
+                <p class="mb-2 mt-0">`+json.name+`</p>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input `+sizeClass+`" id="`+id+`">
                     <label class="custom-file-label" for="`+id+`" id="`+id+`-Label">Choose file</label>
                 </div>
                 </div>
@@ -303,9 +320,9 @@ class JsonForm {
             case "textarea":
                 template = `
                 <div class="col-`+json.field.width+`">
-                <div class="form-group">
-                    <label for="`+id+`">Example textarea</label>
-                    <textarea class="form-control" id="`+id+`" rows="`+json.field.rows+`"></textarea>
+                <div class="form-group mt-3">
+                    <label for="`+id+`">`+json.name+`</label>
+                    <textarea class="form-control `+sizeClass+`" id="`+id+`" rows="`+json.field.rows+`" placeholder="`+json.field.placeholder+`"></textarea>
                 </div>
                 </div>
                 `
@@ -320,9 +337,9 @@ class JsonForm {
             default:
                 template = `
                 <div class="col-`+json.field.width+`">
-                <div class="form-group">
+                <div class="form-group mt-3">
                     <label for="`+id+`">`+json.name+`</label>
-                    <input type="`+json.field.type+`" class="form-control" id="`+id+`" placeholder="`+json.field.placeholder+`" value="`+json.field.default_value+`">
+                    <input type="`+json.field.type+`" class="form-control `+sizeClass+`" id="`+id+`" placeholder="`+json.field.placeholder+`" value="`+json.field.default_value+`">
                 </div>
                 </div>
                 `
@@ -634,6 +651,11 @@ class JsonForm {
             // Pad help text
             if(!("helptext" in json.field)) {
                 json.field.helptext = ""
+            }
+            
+            // Pad sizing
+            if(!("size" in json.field)) {
+                json.field.size = "normal"
             }
 
             // Make sure options is in json.field
