@@ -41,6 +41,7 @@
                     <pre>
 {
     hide_validation: false,
+    button_orientation: "left",
     fields: [
         {
             id: "name",
@@ -49,7 +50,8 @@
             field: {
                 type: "text",
                 placeholder: "Name",
-                default_value: "Bob Smith"
+                default_value: "Bob Smith",
+                helptext: "Any preferred name"
             }
         },
         {
@@ -68,7 +70,8 @@
             field: {
                 type: "text",
                 readonly: true,
-                placeholder: "I'm a placeholder"
+                placeholder: "I'm a placeholder",
+                helptext: "You're not allowed to edit this field"
             }
         },
         {
@@ -96,7 +99,20 @@
             field: {
                 type: "radio",
                 // default_value: "Option B",
-                options: ["Option A", "Option B", "Option C"]
+                options: ["Option A", "Option B", "Option C"],
+                width: "6"
+            }
+        },
+        {
+            id: "inlineabcradio",
+            name: "Inline A, B, or C?",
+            type: "field",
+            field: {
+                type: "radio",
+                default_value: "Option B",
+                inline: true,
+                options: ["Option A", "Option B", "Option C"],
+                width: "6"
             }
         },
         {
@@ -116,6 +132,14 @@
                 type: "select",
                 default_value: "Top",
                 options: ["Left", "Right", "Top", "Bottom"]
+            }
+        },
+        {
+            id: "file",
+            name: "Upload a cat picture",
+            type: "field",
+            field: {
+                type: "file"
             }
         },
     ]
@@ -156,6 +180,7 @@ jsonForm.registerSubmit(MyFormHandler, "Form1")</pre>
                 window.jsonForm = new JsonForm()
                 var Form1Payload = {
                     hide_validation: false,
+                    button_orientation: "left",
                     fields: [
                         {
                             id: "name",
@@ -164,7 +189,17 @@ jsonForm.registerSubmit(MyFormHandler, "Form1")</pre>
                             field: {
                                 type: "text",
                                 placeholder: "Name",
-                                default_value: "Bob Smith"
+                                default_value: "Bob Smith",
+                                helptext: "Any preferred name"
+                            }
+                        },
+                        {
+                            id: "textarea",
+                            name: "What do you like to do in your free time?",
+                            type: "field",
+                            field: {
+                                type: "textarea",
+                                placeholder: "Things I like to do",
                             }
                         },
                         {
@@ -183,7 +218,8 @@ jsonForm.registerSubmit(MyFormHandler, "Form1")</pre>
                             field: {
                                 type: "text",
                                 readonly: true,
-                                placeholder: "I'm a placeholder"
+                                placeholder: "I'm a placeholder",
+                                helptext: "You're not allowed to edit this field"
                             }
                         },
                         {
@@ -211,7 +247,20 @@ jsonForm.registerSubmit(MyFormHandler, "Form1")</pre>
                             field: {
                                 type: "radio",
                                 // default_value: "Option B",
-                                options: ["Option A", "Option B", "Option C"]
+                                options: ["Option A", "Option B", "Option C"],
+                                width: "6"
+                            }
+                        },
+                        {
+                            id: "inlineabcradio",
+                            name: "Inline A, B, or C?",
+                            type: "field",
+                            field: {
+                                type: "radio",
+                                default_value: "Option B",
+                                inline: true,
+                                options: ["Option A", "Option B", "Option C"],
+                                width: "6"
                             }
                         },
                         {
@@ -231,6 +280,14 @@ jsonForm.registerSubmit(MyFormHandler, "Form1")</pre>
                                 type: "select",
                                 default_value: "Top",
                                 options: ["Left", "Right", "Top", "Bottom"]
+                            }
+                        },
+                        {
+                            id: "file",
+                            name: "Upload a cat picture",
+                            type: "field",
+                            field: {
+                                type: "file"
                             }
                         },
                     ]

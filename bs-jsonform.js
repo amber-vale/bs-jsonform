@@ -28,10 +28,15 @@ class JsonForm {
                 throw "You cannot run more than one instance of JsonForm."
             }
         }
+
+        // Tag picker implementation
+        window.addEventListener("tagPicker.complete", (e) => {
+            this._tagPicker_FieldHandler(e.detail)
+        })
     }
 
     create(parent, json, instance="default") {
-        this._initializeForm(parent, instance)
+        this._initializeForm(parent, instance, ("skip_dom_generation" in json))
         this._buildForm(json, instance)
         this._setState("ready", instance)
     }
@@ -48,7 +53,7 @@ class JsonForm {
     // Initializes the form body
     // parent: parent ID
     // instance: the form instance, as lived in this.formInstances
-    _initializeForm(parent, instance="default") {
+    _initializeForm(parent, instance="default", skip_dom=false) {
         var Parent = $(parent)
         if(Parent == undefined) {
             console.error("Parent "+parent+" not found")
@@ -60,15 +65,21 @@ class JsonForm {
             console.error("Cannot initialize on already initialized instance ("+instance+"). Use JsonForm.destroy('"+instance+"') to release this instance.")
         }
 
-        var template = `
-            <form id="JsonForm-`+instance+`" x-instance="`+instance+`" class="`+this.formClasses.Form+`">
-                <div id="JsonForm-`+instance+`-Loader" style="display: none"></div>
-                <div id="JsonForm-`+instance+`-Body" style="display: none"></div>
-                <div id="JsonForm-`+instance+`-Controls" style="display: none"></div>
-            </form>
-        `
+        if (!skip_dom) {
+            // Generate the DOM ourselves
+            var template = `
+                <form id="JsonForm-`+instance+`" x-instance="`+instance+`" class="`+this.formClasses.Form+`">
+                    <div id="JsonForm-`+instance+`-Loader" style="display: none"></div>
+                    <div class="row" id="JsonForm-`+instance+`-Body" style="display: none"></div>
+                    <div id="JsonForm-`+instance+`-Controls" style="display: none"></div>
+                </form>
+            `
 
-        Parent.append(template)
+            Parent.append(template)
+        } else {
+            // Fix DOM
+            $("#JsonForm-"+instance+"-Body").addClass("row")
+        }
 
         this.formInstances[instance] = {
             FormID: "#JsonForm-"+instance,
@@ -136,17 +147,39 @@ class JsonForm {
             json.hide_validation = true
         }
 
+        if (!("button_orientation" in json)){
+            json.button_orientation = "right"
+        }
+
         this.formInstances[instance].JSON = json
 
         if(("form_controls_id" in json)) {
             this.formInstances[instance].ControlsID = json.form_controls_id
         }
 
-        // Build form controls
+        // Configure orientation and options
         var controls = `
         <div class="float-right mt-3">
             <button type="submit" class="btn btn-primary">`+json.submit_button_text+`</button>
         </div>`
+
+        if (json.button_orientation == "left") {
+            controls = `
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">`+json.submit_button_text+`</button>
+            </div>`
+        }
+
+        if (json.button_orientation == "center") {
+            controls = `
+            <div class="d-flex mt-3">
+                <div class="justify-content-center">
+                    <button type="submit" class="btn btn-primary">`+json.submit_button_text+`</button>
+                </div>
+            </div>`
+        }
+
+        // Build form controls
         $(this.formInstances[instance].ControlsID).html(controls)
 
     }
@@ -171,6 +204,19 @@ class JsonForm {
 
         var id = "JsonForm-"+instance+"-Input-"+json.id
         var template = ``
+        
+        // Process options into KV store
+        if (("options" in json.field)) {
+            // if array, dupe
+            if (Array.isArray(json.field.options)) {
+                json.field.optionskeys = json.field.options
+                json.field.optionsvalues = json.field.options
+            } else if (typeof json.field.options == "object") {
+                // Convert into kv
+                json.field.optionskeys = Object.keys(json.field.options)
+                json.field.optionsvalues = Object.values(json.field.options)
+            }
+        }
 
         // Build DOM
         switch (json.field.type) {
@@ -181,11 +227,11 @@ class JsonForm {
                 == "true" || json.field.default_value == "selected") {
                     isChecked = "checked"
                 }
-                template = `
+                template = `<div class="col-`+json.field.width+`">
                 <div class="custom-control custom-switch mt-3">
                     <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
                     <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
-                </div>
+                </div></div>
                 `
                 break
             // Generate checkboxes
@@ -196,17 +242,19 @@ class JsonForm {
                     isChecked = "checked"
                 }
                 template = `
-                <div class="custom-control custom-checkbox mt-3">
-                    <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
-                    <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
+                <div class="col-`+json.field.width+`">
+                    <div class="custom-control custom-checkbox mt-3">
+                        <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
+                        <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
+                    </div>
                 </div>
                 `
                 break
             // Generate radios
             case "radio":
-                template = `<div class="mt-3"><p class="mb-2 mt-0" id="`+id+`">`+json.name+`</p>`
+                template = `<div class="col-`+json.field.width+`"><div class="mt-3"><p class="mb-2 mt-0" id="`+id+`">`+json.name+`</p>`
 
-                json.field.options.forEach((item, index) => {
+                json.field.optionskeys.forEach((item, index) => {
                     var isSelected = ""
                     if (json.field.default_value == item) {
                         isSelected = "checked"
@@ -214,46 +262,68 @@ class JsonForm {
                     template += `
                     <div class="custom-control custom-radio">
                         <input type="radio" id="`+id+index+`" name="`+id+`" value="`+item+`" class="custom-control-input" `+isSelected+`>
-                        <label class="custom-control-label" for="`+id+index+`">`+item+`</label>
+                        <label class="custom-control-label" for="`+id+index+`">`+json.field.optionsvalues[index]+`</label>
                     </div>`
                 })
 
-                template += "</div>"
+                template += "</div></div>"
 
                 break
             // Generate select
             case "select":
-                template = `
+                template = `<div class="col-`+json.field.width+`">
                 <div class="mt-3">
                     <p class="mb-2 mt-0">`+json.name+`</p>
                     <select class="custom-select" id="`+id+`">    
                 `
 
-                json.field.options.forEach((item, index) => {
+                json.field.optionskeys.forEach((item, index) => {
                     var isSelected = ""
                     if (json.field.default_value == item) {
                         isSelected = "selected"
                     }
                     template += `
-                    <option `+isSelected+` value="`+item+`">`+item+`</option>`
+                    <option `+isSelected+` value="`+item+`">`+json.field.optionsvalues[index]+`</option>`
                 })
 
-                template += "</select></div>"
+                template += "</select></div></div>"
 
                 break
             case "file":
                 template = `
-                <div class="custom-file">
+                <div class="col-`+json.field.width+`">
+                <div class="custom-file mt-3">
                     <input type="file" class="custom-file-input" id="`+id+`">
-                    <label class="custom-file-lanobel" for="`+id+`">Choose file</label>
+                    <label class="custom-file-label" for="`+id+`" id="`+id+`-Label">Choose file</label>
+                </div>
                 </div>
                 `
+                break
+            // Textarea element
+            case "textarea":
+                template = `
+                <div class="col-`+json.field.width+`">
+                <div class="form-group">
+                    <label for="`+id+`">Example textarea</label>
+                    <textarea class="form-control" id="`+id+`" rows="`+json.field.rows+`"></textarea>
+                </div>
+                </div>
+                `
+                break
+            case "hidden":
+                template = `<div class="col-`+json.field.width+`">
+                <input type="hidden" id="`+id+`" value="`+json.field.default_value+`"></input>
+                </div>           
+                `
+                break
             // Otherwise do a normal input
             default:
                 template = `
+                <div class="col-`+json.field.width+`">
                 <div class="form-group">
                     <label for="`+id+`">`+json.name+`</label>
                     <input type="`+json.field.type+`" class="form-control" id="`+id+`" placeholder="`+json.field.placeholder+`" value="`+json.field.default_value+`">
+                </div>
                 </div>
                 `
         }
@@ -264,6 +334,11 @@ class JsonForm {
         // If it is marked as readonly, disable input
         if(json.field.readonly){
             this._disableInput("#"+id)
+        }
+
+        // If it has a helper text, show
+        if (json.field.helptext != "") {
+            this._setHelpText("#"+id, json.field.helptext)
         }
 
         // Handle field update handlers
@@ -286,7 +361,6 @@ class JsonForm {
         var formValid = true
         var values = {}
 
-        console.log(instance)
         if (!(instance in this.formInstances)) {
             console.error("Instance ("+instance+") not found.")
             return
@@ -297,7 +371,6 @@ class JsonForm {
         // Validate all fields
         Object.keys(formInstance.Fields).forEach((item) => {
             var field = formInstance.Fields[item]
-            console.log(item, field)
 
             if (field.field.readonly){
                 values[item] = field.field.default_value
@@ -309,10 +382,16 @@ class JsonForm {
                 formValid = false
             } 
 
+            // Handle file input
+            if(field.field.type == "file") {
+                values[item] = {
+                    Name: validation.Value,
+                    Files: $("#JsonForm-"+instance+"-Input-"+field.id)[0].files
+                }
+                return 
+            }
             values[item] = validation.Value
         })
-
-        console.log(values)
 
         if(!formValid) {
             formInstance.SubmitHandler(false, null)
@@ -325,7 +404,6 @@ class JsonForm {
     // Handle validation
     _validateField(fieldId, instance="default") {
         var Valid = true
-        console.log(fieldId)
 
         var formInstance = this.formInstances[instance]
         var fieldInstance = formInstance.Fields[fieldId]
@@ -343,13 +421,23 @@ class JsonForm {
             requiredMsg = "Please select an option"
         }
 
+        // Handle checks/switches
         if (fieldInstance.field.type == "checkbox" || fieldInstance.field.type == "switch") {
             Value = $(id).is(":checked")
             requiredMsg = "Please check this box"
         }
 
+        // Handle file inputs
+        if (fieldInstance.field.type == "file") {
+            requiredMsg = "Please upload a file"
+        }
+
         // handle required validator
         if (fieldInstance.field.required && !Value) {
+            // Handle file input
+            if (fieldInstance.field.type == "file") {
+                $(id+"-Label").text("Choose file")
+            }
             this._invalidateInput(id, requiredMsg)
             Valid = false
         }
@@ -360,17 +448,23 @@ class JsonForm {
             this._validateInput(id)
         }
 
-        console.log(Valid, Value)
+        // Update label on file
+        if (fieldInstance.field.type == "file" && Value) {
+            var filename = this._fileInputStrip(Value)
+            $(id+"-Label").text(filename)
+        }
+
         return {Valid, Value}
     }
 
     // Prepares an input's validate/invalidate text and classes
-    _prepInput(InputId) {
+    _prepInput(InputId, reset=true) {
         // Determine if various states exists
         var Input = $(InputId)
         var InputParent = $(InputId).parent()
         var InvalidText = $(InputId+"-InvalidText")[0]
         var ValidText = $(InputId+"-ValidText")[0]
+        var HelpText = $(InputId+"-HelpText")[0]
 
         // Make sure Input and Input parent exists
         if(Input == null || InputParent == null){
@@ -392,12 +486,19 @@ class JsonForm {
             ValidText = $("#"+InputIdAttr+"-ValidText")
         }
 
-        // Hide all helpers and reset form
-        $(InvalidText).hide().text('')
-        $(ValidText).hide().text('')
-        $(Input).removeClass("is-invalid").removeClass("is-valid")
+        if (HelpText == null) { // Create help text
+            $(InputParent).append(`<div class="help-feedback text-muted form-text" id="`+InputIdAttr+`-HelpText" style="display: none"></div>`)
+            HelpText = $("#"+InputIdAttr+"-HelpText")
+        }
 
-        return {Input, InputParent, InvalidText, ValidText}
+        // Hide all helpers and reset form
+        if(reset) {
+            $(InvalidText).hide().text('')
+            $(ValidText).hide().text('')
+            $(Input).removeClass("is-invalid").removeClass("is-valid")
+        }
+
+        return {Input, InputParent, InvalidText, ValidText, HelpText}
     }
 
     // Show invalid state
@@ -416,6 +517,13 @@ class JsonForm {
 
         $(Input.Input).addClass("is-valid")
         $(Input.ValidText).show().text(Msg)
+    }
+
+    // Sets helper text
+    _setHelpText(InputId, Msg='') {
+        var Input = this._prepInput(InputId)
+        if (!Input){return}
+        $(Input.HelpText).show().text(Msg)
     }
 
     // Disable input
@@ -513,6 +621,21 @@ class JsonForm {
                 json.field.use_validate_callback = false
             }
 
+            // Pad width
+            if(!("width" in json.field)) {
+                json.field.width = "12"
+            }
+            
+            // Pad rows for textarea
+            if(!("rows" in json.field)) {
+                json.field.rows = "3"
+            }
+
+            // Pad help text
+            if(!("helptext" in json.field)) {
+                json.field.helptext = ""
+            }
+
             // Make sure options is in json.field
             if(!("options" in json.field) && json.field.type == "select") {
                 console.error("Options array is mandatory when field.type = select", json)
@@ -528,6 +651,15 @@ class JsonForm {
         // No errors/pad finished
         json.isValid = true
         return json
+    }
+
+    _fileInputStrip(fullPath) {
+        var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+        var filename = fullPath.substring(startIndex);
+        if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+            filename = filename.substring(1);
+        }
+        return filename
     }
 
 }

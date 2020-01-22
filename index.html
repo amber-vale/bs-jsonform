@@ -62,6 +62,11 @@
                         <td>Whether or not to show the valid state on inputs.</td>
                     </tr>
                     <tr>
+                        <td><code>button_orientation</code><br />Default: <i>right</i></td>
+                        <td>left/right<br /><i>Options</i></td>
+                        <td>The orientation to display the button controls.</td>
+                    </tr>
+                    <tr>
                         <td><code>form_controls_id</code><br /><i>Automatically generated</i></td>
                         <td>An Element ID<br /><i>String</i></td>
                         <td>JsonForm automatically handles specifying and creating the IDs needed for Form generation.<br />If you want to override the placement of the Form Controls, use this key.</td>
@@ -178,6 +183,34 @@
                         <td>true/false<br /><i>Boolean</i></td>
                         <td>false</td>
                         <td>Whether or not to use specified validate_callback to validate the value on input</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>inline</code></td>
+                        <td>true/false<br /><i>Boolean</i></td>
+                        <td>false</td>
+                        <td>Whether to display the radio fields as inline versus vertical.</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>width</code></td>
+                        <td>Grid column width<br /><i>1-12</i></td>
+                        <td>12</td>
+                        <td>The width of the input.</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>rows</code></td>
+                        <td>Number<br /><i>Number</i></td>
+                        <td>3</td>
+                        <td>The number of rows to display in the textarea</td>
+                    </tr>
+
+                    <tr>
+                        <td><code>helptext</code></td>
+                        <td>Anything<br /><i>Anything</i></td>
+                        <td>None</td>
+                        <td>Help text to display along with the input</td>
                     </tr>
                 </tbody>
             </table>
