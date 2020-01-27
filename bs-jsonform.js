@@ -215,138 +215,27 @@ class JsonForm {
 
         var id = "JsonForm-"+instance+"-Input-"+json.id
         var template = ``
-        
-        // Process options into KV store
-        if (("options" in json.field)) {
-            // if array, dupe
-            if (Array.isArray(json.field.options)) {
-                json.field.optionskeys = json.field.options
-                json.field.optionsvalues = json.field.options
-            } else if (typeof json.field.options == "object") {
-                // Convert into kv
-                json.field.optionskeys = Object.keys(json.field.options)
-                json.field.optionsvalues = Object.values(json.field.options)
-            }
-        }
-
-        // Determine sizing class
-        var sizeClass = ""
-        if (json.field.size == "large"){sizeClass = "form-control-lg"}
-        if (json.field.size == "small"){sizeClass = "form-control-sm"}
 
         // Build DOM
         switch (json.field.type) {
-            // Generate switch
-            case "switch":
-                var isChecked = ""
-                if (json.field.default_value == "checked" || json.field.default_value 
-                == "true" || json.field.default_value == "selected") {
-                    isChecked = "checked"
+            case "list": 
+                template = `<div class="col-12"><div id="`+id+`"></div></div>`
+                $(formInstance.BodyID).append(template)
+
+                this._listInputHandler(id, "initialize", instance)
+
+                // Build list if we have default values
+                if (("default_value" in json)){
+                    this._listInputHandler(id, "setValues", instance)
                 }
-                template = `<div class="col-`+json.field.width+`">
-                <div class="custom-control custom-switch mt-3">
-                    <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
-                    <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
-                </div></div>
-                `
-                break
-            // Generate checkboxes
-            case "checkbox":
-                var isChecked = ""
-                if (json.field.default_value == "checked" || json.field.default_value 
-                == "true" || json.field.default_value == "selected") {
-                    isChecked = "checked"
-                }
-                template = `
-                <div class="col-`+json.field.width+`">
-                    <div class="custom-control custom-checkbox mt-3">
-                        <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
-                        <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
-                    </div>
-                </div>
-                `
-                break
-            // Generate radios
-            case "radio":
-                template = `<div class="col-`+json.field.width+`"><div class="mt-3"><p class="mb-2 mt-0" id="`+id+`">`+json.name+`</p>`
-
-                json.field.optionskeys.forEach((item, index) => {
-                    var isSelected = ""
-                    if (json.field.default_value == item) {
-                        isSelected = "checked"
-                    }
-                    template += `
-                    <div class="custom-control custom-radio">
-                        <input type="radio" id="`+id+index+`" name="`+id+`" value="`+item+`" class="custom-control-input" `+isSelected+`>
-                        <label class="custom-control-label" for="`+id+index+`">`+json.field.optionsvalues[index]+`</label>
-                    </div>`
-                })
-
-                template += "</div></div>"
 
                 break
-            // Generate select
-            case "select":
-                template = `<div class="col-`+json.field.width+`">
-                <div class="mt-3">
-                    <p class="mb-2 mt-0">`+json.name+`</p>
-                    <select class="custom-select `+sizeClass+`" id="`+id+`">    
-                `
-
-                json.field.optionskeys.forEach((item, index) => {
-                    var isSelected = ""
-                    if (json.field.default_value == item) {
-                        isSelected = "selected"
-                    }
-                    template += `
-                    <option `+isSelected+` value="`+item+`">`+json.field.optionsvalues[index]+`</option>`
-                })
-
-                template += "</select></div></div>"
-
-                break
-            case "file":
-                template = `
-                <div class="col-`+json.field.width+` mt-3">
-                <p class="mb-2 mt-0">`+json.name+`</p>
-                <div class="custom-file">
-                    <input type="file" class="custom-file-input `+sizeClass+`" id="`+id+`">
-                    <label class="custom-file-label" for="`+id+`" id="`+id+`-Label">Choose file</label>
-                </div>
-                </div>
-                `
-                break
-            // Textarea element
-            case "textarea":
-                template = `
-                <div class="col-`+json.field.width+`">
-                <div class="form-group mt-3">
-                    <label for="`+id+`">`+json.name+`</label>
-                    <textarea class="form-control `+sizeClass+`" id="`+id+`" rows="`+json.field.rows+`" placeholder="`+json.field.placeholder+`"></textarea>
-                </div>
-                </div>
-                `
-                break
-            case "hidden":
-                template = `<div class="col-`+json.field.width+`">
-                <input type="hidden" id="`+id+`" value="`+json.field.default_value+`"></input>
-                </div>           
-                `
-                break
-            // Otherwise do a normal input
             default:
-                template = `
-                <div class="col-`+json.field.width+`">
-                <div class="form-group mt-3">
-                    <label for="`+id+`">`+json.name+`</label>
-                    <input type="`+json.field.type+`" class="form-control `+sizeClass+`" id="`+id+`" placeholder="`+json.field.placeholder+`" value="`+json.field.default_value+`">
-                </div>
-                </div>
-                `
+                template = this._getFieldTemplate(id, json)
+                $(formInstance.BodyID).append(template)
+                this._prepInput("#"+id)
         }
         
-        $(formInstance.BodyID).append(template)
-        this._prepInput("#"+id)
 
         // If it is marked as readonly, disable input
         if(json.field.readonly){
@@ -359,11 +248,14 @@ class JsonForm {
         }
 
         // Handle field update handlers
-        if(json.field.type !== "radio") {
+        if(json.field.type !== "radio" && json.field.type !== "list") {
             // Register event handlers
             $("#"+id).change(() => {
                 this._validateField(json.id, instance)
             })
+        } else if (json.field.type === "list") {
+            // Do nothing for lists as it has its own handlers
+            return
         } else {
             // Radios need a special handler
             $("input[name=\""+id+"\"]").change(() => {
@@ -389,7 +281,7 @@ class JsonForm {
         Object.keys(formInstance.Fields).forEach((item) => {
             var field = formInstance.Fields[item]
 
-            if (field.field.readonly){
+            if (field.field.readonly && field.field.type != "list"){
                 values[item] = field.field.default_value
                 return
             }
@@ -428,25 +320,29 @@ class JsonForm {
         var id = "#JsonForm-"+instance+"-Input-"+fieldId
         var name = "JsonForm-"+instance+"-Input-"+fieldId
         var Element = $(id)
-        var Value = Element.val()
+        var Value = this._inputValue(id).Value
 
         var requiredMsg = "Please fill out this field"
 
         // Handle radios
         if (fieldInstance.field.type == "radio") {
-            Value = $('input[name="'+name+'"]:checked').val();
             requiredMsg = "Please select an option"
         }
 
         // Handle checks/switches
         if (fieldInstance.field.type == "checkbox" || fieldInstance.field.type == "switch") {
-            Value = $(id).is(":checked")
             requiredMsg = "Please check this box"
         }
 
         // Handle file inputs
         if (fieldInstance.field.type == "file") {
             requiredMsg = "Please upload a file"
+        }
+
+        // Handle list inputs
+        if (fieldInstance.field.type == "list") {
+            Value = this._listInputHandler(name, "getValues", instance)
+            requiredMsg = "Please add at least one entry"
         }
 
         // handle required validator
@@ -458,10 +354,19 @@ class JsonForm {
             this._invalidateInput(id, requiredMsg)
             Valid = false
         }
-        if (fieldInstance.field.required && Value && formInstance.JSON.hide_validation) {
+        
+        if (fieldInstance.field.required && fieldInstance.field.type == "list") {
+            console.log(Value)
+            if (Object.keys(Value).length == 0 || Object.keys(Value[1]).length == 0) {
+                this._invalidateInput(id, requiredMsg)
+                Valid = false
+            } 
+        }
+
+        if (fieldInstance.field.required && Valid && formInstance.JSON.hide_validation) {
             this._prepInput(id)
         }
-        if (fieldInstance.field.required && Value && !formInstance.JSON.hide_validation) {
+        if (fieldInstance.field.required && Valid && !formInstance.JSON.hide_validation) {
             this._validateInput(id)
         }
 
@@ -472,6 +377,31 @@ class JsonForm {
         }
 
         return {Valid, Value}
+    }
+
+    // Helper for getting the value of an input
+    _inputValue(id) {
+        var Element = $(id)
+        if (!Element) {return}
+
+        if (Element.prop("nodeName") == "P") {
+            Value = $('input[name="'+id.replace("#", "")+'"]:checked').val()
+            return {Value, Type: "radio"}
+        }
+
+        var Value = ""
+
+        console.log(id, $(Element), $(Element).prop("nodeName"), $(Element).attr("type"))
+
+        switch (Element.attr("type")) {
+            case "checkbox" || "radio":
+                Value = Element.is(":checked")
+                break
+            default:
+                Value = Element.val()
+        }
+
+        return {Value, Type: Element.attr("type")}
     }
 
     // Prepares an input's validate/invalidate text and classes
@@ -561,6 +491,152 @@ class JsonForm {
         $(Input.Input).removeAttr("disabled")
     }
 
+    // Create template
+    _getFieldTemplate(id, json, enable_label=true, spacer_class="mt-3") {
+        // Process options into KV store
+        if (("options" in json.field)) {
+            // if array, dupe
+            if (Array.isArray(json.field.options)) {
+                json.field.optionskeys = json.field.options
+                json.field.optionsvalues = json.field.options
+            } else if (typeof json.field.options == "object") {
+                // Convert into kv
+                json.field.optionskeys = Object.keys(json.field.options)
+                json.field.optionsvalues = Object.values(json.field.options)
+            }
+        }
+
+        // Sizing class
+        var sizeClass = ""
+        if (json.field.size == "large"){sizeClass = "form-control-lg"}
+        if (json.field.size == "small"){sizeClass = "form-control-sm"}
+
+        var template = ''
+        switch (json.field.type) {
+            // Generate switch
+            case "switch":
+                var isChecked = ""
+                if (json.field.default_value == "checked" || json.field.default_value 
+                == "true" || json.field.default_value == "selected") {
+                    isChecked = "checked"
+                }
+                
+                template = `<div class="col-`+json.field.width+`">
+                <div class="custom-control custom-switch `+spacer_class+`">
+                    <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
+                    <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
+                </div></div>
+                `
+                break
+            // Generate checkboxes
+            case "checkbox":
+                var isChecked = ""
+                if (json.field.default_value == "checked" || json.field.default_value 
+                == "true" || json.field.default_value == "selected") {
+                    isChecked = "checked"
+                }
+                template = `
+                <div class="col-`+json.field.width+`">
+                    <div class="custom-control custom-checkbox `+spacer_class+`">
+                        <input type="checkbox" class="custom-control-input" id="`+id+`" `+isChecked+`>
+                        <label class="custom-control-label" for="`+id+`">`+json.name+`</label>
+                    </div>
+                </div>
+                `
+                break
+            // Generate radios
+            case "radio":
+                template = `<div class="col-`+json.field.width+`"><div class="`+spacer_class+`"><p class="mb-2 mt-0" id="`+id+`">`+json.name+`</p>`
+
+                json.field.optionskeys.forEach((item, index) => {
+                    var isSelected = ""
+                    if (json.field.default_value == item) {
+                        isSelected = "checked"
+                    }
+                    template += `
+                    <div class="custom-control custom-radio">
+                        <input type="radio" id="`+id+index+`" name="`+id+`" value="`+item+`" class="custom-control-input" `+isSelected+`>
+                        <label class="custom-control-label" for="`+id+index+`">`+json.field.optionsvalues[index]+`</label>
+                    </div>`
+                })
+
+                template += "</div></div>"
+
+                break
+            // Generate select
+            case "select":
+                var label = ''
+                if (enable_label) {label = `<p class="mb-2 mt-0">`+json.name+`</p>`}
+
+                template = `<div class="col-`+json.field.width+`">
+                <div class="`+spacer_class+`">
+                    `+label+`   
+                    <select class="custom-select `+sizeClass+`" id="`+id+`">    
+                `
+
+                json.field.optionskeys.forEach((item, index) => {
+                    var isSelected = ""
+                    if (json.field.default_value == item) {
+                        isSelected = "selected"
+                    }
+                    template += `
+                    <option `+isSelected+` value="`+item+`">`+json.field.optionsvalues[index]+`</option>`
+                })
+
+                template += "</select></div></div>"
+
+                break
+            case "file":
+                var label = ''
+                if (enable_label) {label = `<p class="mb-2 mt-0">`+json.name+`</p>`}
+
+                template = `
+                <div class="col-`+json.field.width+` `+spacer_class+`">
+                `+label+`
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input `+sizeClass+`" id="`+id+`">
+                    <label class="custom-file-label" for="`+id+`" id="`+id+`-Label">Choose file</label>
+                </div>
+                </div>
+                `
+                break
+            // Textarea element
+            case "textarea":
+                var label = ''
+                if (enable_label) {label = `<label for="`+id+`">`+json.name+`</label>`}
+
+                template = `
+                <div class="col-`+json.field.width+`">
+                <div class="form-group `+spacer_class+`">
+                    `+label+`
+                    <textarea class="form-control `+sizeClass+`" id="`+id+`" rows="`+json.field.rows+`" placeholder="`+json.field.placeholder+`"></textarea>
+                </div>
+                </div>
+                `
+                break
+            case "hidden":
+                template = `<div class="col-`+json.field.width+`">
+                <input type="hidden" id="`+id+`" value="`+json.field.default_value+`"></input>
+                </div>           
+                `
+                break
+            // Otherwise do a normal input
+            default:
+                var label = ''
+                if (enable_label) {label = `<label for="`+id+`">`+json.name+`</label>`}
+
+                template = `
+                <div class="col-`+json.field.width+`">
+                <div class="form-group `+spacer_class+`">
+                    `+label+`
+                    <input type="`+json.field.type+`" class="form-control `+sizeClass+`" id="`+id+`" placeholder="`+json.field.placeholder+`" value="`+json.field.default_value+`">
+                </div>
+                </div>
+                `
+        }
+        return template
+    }
+
     // Set form state
     _setState(state, instance="default") {
         if(!(instance in this.formInstances)) {
@@ -584,7 +660,7 @@ class JsonForm {
     }
 
     // Pad field json to inject defaults and validate config
-    _padFieldJson(json) {
+    _padFieldJson(json, is_list=false) {
         json.isValid = false
 
         // Makes sure mandatory fields are in top-level
@@ -675,6 +751,7 @@ class JsonForm {
         return json
     }
 
+    // file input handler
     _fileInputStrip(fullPath) {
         var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
         var filename = fullPath.substring(startIndex);
@@ -682,6 +759,259 @@ class JsonForm {
             filename = filename.substring(1);
         }
         return filename
+    }
+
+    // list input handler 
+    _listInputHandler(id, event, instance="default", offset=0, domEvent=null) {
+
+        var fieldId = id.replace("JsonForm-"+instance+"-Input-", "")
+        fieldId = fieldId.replace("#", "")
+
+        if(!(instance in this.formInstances)) {
+            console.error("Instance "+instance+" has not been initialized")
+        }
+
+        var formInstance = this.formInstances[instance]
+        var fieldInstance = formInstance.Fields[fieldId]
+
+        console.log(fieldId, event)
+
+        switch (event) {
+            // Handle initializing a list
+            case "initialize":
+                var width = 10
+                // Create DOM
+                var template = `
+                    <p class="mt-3 mb-2">`+fieldInstance.name+`</p>
+                    <div class="row" id="`+id+`-Row"></div>
+                ` 
+                $("#"+id).html(template)
+
+                // Determine if we need to gen DOM
+                if (!("fields" in fieldInstance.field)) {
+                    template = `
+                    <div class="col-10">
+                        <input id="`+id+`-AddInput-0" type="`+fieldInstance.field.type+`" placeholder="`+fieldInstance.field.placeholder+`" class="form-control"></input> 
+                    </div>`
+                } else {
+                    // Create the DOM
+                    template = ``
+                    width = Math.floor(10 / (fieldInstance.field.fields.length - offset))
+                    fieldInstance.field.fields.forEach((item, index) => {
+                        console.log(item)
+                        item.field.width = width
+                        var domId = id+"-AddInput-"+index
+                        item = this._padFieldJson(item)
+                        template += this._getFieldTemplate(domId, item, false, "mb-0")
+                    })
+                }
+
+                var addBtnClass = "col-2"
+                if (width == 3) {
+                    addBtnClass = "col-3"
+                }
+
+                template += `
+                <div class="`+addBtnClass+`">
+                    <button id="`+id+`-AddBtn" type="button" class="w-100 btn btn-primary">Add</button>
+                </div>
+                `
+
+                if(!fieldInstance.field.readonly) {
+                    $("#"+id+"-Row").html(template)
+                }
+
+                // Register events
+                $(document).on("click", "#"+id+"-AddBtn", () => {
+                    this._listInputHandler(id, "addItem", instance)
+                })
+                break
+            // Handle addItem event
+            case "addItem":
+                if (fieldInstance.field.readonly){return}
+
+                var width = 10
+                // Create DOM
+                var template = ``
+
+                // Get values
+                var values = []
+                if (!("fields" in fieldInstance.field)) {
+                    values[0] = $("#"+id+"-AddInput-0").val()
+                } else {
+                    fieldInstance.field.fields.forEach((item, index) => {
+                        var domId = "#"+id+"-AddInput-"+index
+                        values[index] = this._inputValue(domId).Value
+                        console.log(this._inputValue(domId), domId)
+                    })
+                }
+
+                // CHeck validation
+                var valid = true
+                values.forEach((item, index) => {
+                    var domId = "#"+id+"-AddInput-"+index
+                    if (!item){
+                        valid = false
+                        this._invalidateInput(domId)
+                        return
+                    } else {
+                        this._prepInput(domId)
+                    }
+                })
+                if (!valid){return}
+                
+                // Add item to ct
+                if (!("ct" in fieldInstance.field)){
+                    fieldInstance.field.ct = 1
+                } else {
+                    fieldInstance.field.ct += 1
+                }
+                
+                var template = ''
+                // Determine if we need to gen DOM
+                if (!("fields" in fieldInstance.field)) {
+                    template = `
+                    <div class="col-10 mb-3">
+                        <input id="`+id+`-ItemInput-0-`+fieldInstance.field.ct+`" type="`+fieldInstance.field.type+`" placeholder="`+fieldInstance.field.placeholder+`" class="form-control" value="`+values[0]+`"></input> 
+                    </div>`
+                    $(document).on("change", "#"+id+"-ItemInput-0-"+fieldInstance.field.ct, () => {
+                        this._listInputHandler(id, "updateValue", instance)
+                    })
+                } else {
+                    // Create the DOM
+                    template = ``
+                    width = Math.floor(10 / fieldInstance.field.fields.length)
+                    fieldInstance.field.fields.forEach((item, index) => {
+                        item.field.width = width
+                        item.field.default_value = values[index]
+                        var domId = id+"-ItemInput-"+index+"-"+fieldInstance.field.ct
+                        item = this._padFieldJson(item)
+                        template += this._getFieldTemplate(domId, item, false, "mb-3")
+                        // Register events
+                        $(document).on("change", "#"+domId, (e) => {
+                            this._listInputHandler(id, "updateValue", instance, offset, e)
+                        })
+                    })
+                }
+
+                var btnClass = "col-2"
+                if (width == 3) {
+                    btnClass = "col-3"
+                }
+
+                template += `
+                    <div class="`+btnClass+`" id="`+id+`-`+fieldInstance.field.ct+`-RmWrapper">
+                        <button id="`+id+`-`+fieldInstance.field.ct+`-RmBtn" type="button" class="w-100 btn btn-danger" x-ct="`+fieldInstance.field.ct+`">&times;</button>
+                    </div>
+                `
+                var previous = $("#"+id+"-Row").html()
+                $("#"+id+"-Row").html(template + previous)
+
+                // Register events
+                $(document).on("click", "#"+id+"-"+fieldInstance.field.ct+"-RmBtn", (e) => {
+                    this._listInputHandler(id, "rmItem", instance, offset, e)
+                })
+                break
+            // Remove item
+            case "rmItem":
+                if (!domEvent){return}
+                if (fieldInstance.field.readonly){return}
+                var ct = $(domEvent.target).attr("x-ct")
+                
+                // Remove DOM
+                if (!("fields" in fieldInstance.field)) {
+                    $("#"+id+"-ItemInput-0-"+ct).parent().remove()
+                    $("#"+id+"-ItemInput-0-"+ct).remove()
+                } else {
+                    fieldInstance.field.fields.forEach((item, index) => {
+                        var domId = id+"-ItemInput-"+index+"-"+ct
+                        $("#"+domId).parent().remove()
+                        $("#"+domId).remove()
+                    })
+                }
+
+                $("#"+id+"-"+ct+"-RmWrapper").remove()
+
+                break
+            // Get values
+            case "getValues":
+                // Build an array of the results
+                var ct = 1
+                var values = {}
+                for (ct = 1; ct <= fieldInstance.field.ct; ct++) {
+                    if (!("fields" in fieldInstance.field)) {
+                        if(!(1 in values)){values[1] = {}}
+                        var domId = "#"+id+"-ItemInput-0-"+ct
+                        values[1][ct] = this._inputValue(domId).Value
+                    } else {
+                        fieldInstance.field.fields.forEach((item, index) => {
+                            if(!(ct in values)){values[ct] = {}}
+                            var domId = "#"+id+"-ItemInput-"+index+"-"+ct
+                            values[ct][item.id] = this._inputValue(domId).Value
+                        })
+                    }
+                }
+                return values
+            case "setValues":
+                // Build the list based on the results
+                fieldInstance.default_value.forEach((item, index) => {
+                    var values = item
+                    // Add item to ct
+                    if (!("ct" in fieldInstance.field)){
+                        fieldInstance.field.ct = 1
+                    } else {
+                        fieldInstance.field.ct += 1
+                    }
+                    
+                    var template = ''
+                    // Determine if we need to gen DOM
+                    if (!("fields" in fieldInstance.field)) {
+                        template = `
+                        <div class="col-10 mb-3">
+                            <input id="`+id+`-ItemInput-0-`+fieldInstance.field.ct+`" type="`+fieldInstance.field.type+`" placeholder="`+fieldInstance.field.placeholder+`" class="form-control" value="`+values[0]+`"></input> 
+                        </div>`
+                        $(document).on("change", "#"+id+"-ItemInput-0-"+fieldInstance.field.ct, () => {
+                            this._listInputHandler(id, "updateValue", instance)
+                        })
+                    } else {
+                        // Create the DOM
+                        template = ``
+                        width = Math.floor(10 / fieldInstance.field.fields.length)
+                        fieldInstance.field.fields.forEach((item, index) => {
+                            item.field.width = width
+                            item.field.default_value = values[index]
+                            var domId = id+"-ItemInput-"+index+"-"+fieldInstance.field.ct
+                            item = this._padFieldJson(item)
+                            template += this._getFieldTemplate(domId, item, false, "mb-3")
+                            // Register events
+                            $(document).on("change", "#"+domId, (e) => {
+                                this._listInputHandler(id, "updateValue", instance, offset, e)
+                            })
+                        })
+                    }
+
+                    var btnClass = "col-2"
+                    if (width == 3) {
+                        btnClass = "col-3"
+                    }
+
+                    var btnDisabled = ""
+                    if (fieldInstance.field.readonly){btnDisabled = "disabled"}
+
+                    template += `
+                        <div class="`+btnClass+`" id="`+id+`-`+fieldInstance.field.ct+`-RmWrapper">
+                            <button id="`+id+`-`+fieldInstance.field.ct+`-RmBtn" type="button" class="w-100 btn btn-danger" x-ct="`+fieldInstance.field.ct+`" `+btnDisabled+`>&times;</button>
+                        </div>
+                    `
+                    var previous = $("#"+id+"-Row").html()
+                    $("#"+id+"-Row").html(template + previous)
+                    // Register events
+                    $(document).on("click", "#"+id+"-"+fieldInstance.field.ct+"-RmBtn", (e) => {
+                        this._listInputHandler(id, "rmItem", instance, offset, e)
+                    })
+                })
+                break
+        }
     }
 
 }

@@ -1,0 +1,163 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>Bootstrap 4 JSON Form - Lists Test Case</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+        <style>
+            pre {
+                background: rgba(0,0,0,0.1);
+                padding: 5px;
+                border-radius: 10px;
+                white-space: pre-wrap;       /* css-3 */
+                white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                white-space: -pre-wrap;      /* Opera 4-6 */
+                white-space: -o-pre-wrap;    /* Opera 7 */
+                word-wrap: break-word; 
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Nav -->
+        <nav class="navbar fixed-top navbar-dark bg-primary">
+            <span class="navbar-brand mb-0 h1">Bootstrap 4 JSON Form</span>
+            <span class="navbar-text">
+                <a href="index.html" class="mr-3">Home</a>
+                <a href="test.html" class="mr-3">Demos</a>
+                <a href="validator.html" class="mr-3">Validator</a>
+                <!-- By <a href="https://github.com/ambersnow">Amber</a> -->
+            </span>
+        </nav>
+
+        <!-- Content -->
+        <div style="height: 15vh"></div>
+        <div class="container">
+
+            <h2>Lists</h2>
+
+            <p>Lists are a more complicated element in JsonForm. For its implemenation, <code>type=field</code> and <code>field.type=list</code> is required. Within the <code>field</code> configuration space, you need an additional <code>fields</code> array of objects set. This tells the list how to show your list input(s). If omitted, a basic text list will be generated.</p>
+
+            <div class="row mt-5">
+
+                <div class="col-12 col-md-6">
+
+                    <h5>JSON</h5>
+                    <pre id="json"></pre>
+
+                </div>
+
+                <div class="col-12 col-md-6">
+
+                    <h5>Methods</h5>
+                    <pre>
+var jsonForm = new JsonForm()
+var formJson = {...}
+jsonForm.create("#Form1", formJson, "Form1")
+jsonForm.registerSubmit(MyFormHandler, "Form1")</pre>
+
+                    <h5 class="mt-5">Form</h5>
+                    <div id="Form1"></div>
+
+                    <h5 class="mt-5">Data</h5>
+                    <p>Upon submission, your Submit Handler will be called with a (boolean, object) arguments. Submit the form above to see the object below.</p>
+                    <pre id="Form1Data">Submit the form to see data</pre>
+
+                </div>
+
+            </div>
+
+            
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    
+        <script src="bs-jsonform.js"></script>
+        <script>
+            $(function() {
+                window.jsonForm = new JsonForm()
+                var Form1Payload = {
+                    fields: [
+                        {
+                            id: "basiclist",
+                            name: "Add some food",
+                            type: "field",
+                            field: {
+                                type: "list",
+                                placeholder: "Food item",
+                                helptext: "Enter a food and hit Add"
+                            },
+                        },
+                        {
+                            id: "readonlybasiclist",
+                            name: "Modify your saved foods",
+                            type: "field",
+                            field: {
+                                type: "list",
+                                placeholder: "Food item",
+                                helptext: "You cannot add new entries",
+                                readonly: true
+                            },
+                            default_value: [
+                                ["Apple"],
+                                ["Pineapple"],
+                                ["Banana"]
+                            ]
+                        },
+                        {
+                            id: "advlist",
+                            name: "Add some shapes",
+                            type: "field",
+                            field: {
+                                type: "list",
+                                helptext: "Enter some shapes and properties and hit Add",
+                                fields: [
+                                    {
+                                        id: "advlist-name",
+                                        name: "",
+                                        type: "field",
+                                        field: {
+                                            type: "text",
+                                            placeholder: "Shape name",
+                                        }
+                                    },
+                                    {
+                                        id: "advlist-size",
+                                        name: "",
+                                        type: "field",
+                                        field: {
+                                            type: "select",
+                                            placeholder: "Shape size",
+                                            options: ["XS", "S", "M", "L", "XL"]
+                                        }
+                                    },
+                                    {
+                                        id: "advlist-color",
+                                        name: "",
+                                        type: "field",
+                                        field: {
+                                            type: "color",
+                                            placeholder: "Shape color"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+                $("#json").text(JSON.stringify(Form1Payload, null, 2))
+                window.jsonForm.create("#Form1", Form1Payload, "Form1")
+                window.jsonForm.registerSubmit(Form1Handler, "Form1")
+
+                function Form1Handler(valid, data) {
+                    if(valid) {
+                        $("#Form1Data").text(JSON.stringify(data, null, 2))
+                    } else {
+                        $("#Form1Data").text("Form is NOT VALID. Did you fill out all fields?")
+                    }
+                }
+            })
+        </script>
+    </body>
+</html>
