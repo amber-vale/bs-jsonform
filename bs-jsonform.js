@@ -356,7 +356,6 @@ class JsonForm {
         }
         
         if (fieldInstance.field.required && fieldInstance.field.type == "list") {
-            console.log(Value)
             if (Object.keys(Value).length == 0 || Object.keys(Value[1]).length == 0) {
                 this._invalidateInput(id, requiredMsg)
                 Valid = false
@@ -390,8 +389,6 @@ class JsonForm {
         }
 
         var Value = ""
-
-        console.log(id, $(Element), $(Element).prop("nodeName"), $(Element).attr("type"))
 
         switch (Element.attr("type")) {
             case "checkbox" || "radio":
@@ -774,8 +771,6 @@ class JsonForm {
         var formInstance = this.formInstances[instance]
         var fieldInstance = formInstance.Fields[fieldId]
 
-        console.log(fieldId, event)
-
         switch (event) {
             // Handle initializing a list
             case "initialize":
@@ -798,7 +793,6 @@ class JsonForm {
                     template = ``
                     width = Math.floor(10 / (fieldInstance.field.fields.length - offset))
                     fieldInstance.field.fields.forEach((item, index) => {
-                        console.log(item)
                         item.field.width = width
                         var domId = id+"-AddInput-"+index
                         item = this._padFieldJson(item)
@@ -842,7 +836,6 @@ class JsonForm {
                     fieldInstance.field.fields.forEach((item, index) => {
                         var domId = "#"+id+"-AddInput-"+index
                         values[index] = this._inputValue(domId).Value
-                        console.log(this._inputValue(domId), domId)
                     })
                 }
 
