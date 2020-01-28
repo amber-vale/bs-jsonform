@@ -142,7 +142,7 @@ class JsonForm {
                     return
                 }
 
-                $(formInstance.BodyID).append(field.html)
+                $(formInstance.BodyID).append(`<div class="col-12">`+field.html+`</div>`)
             }
         })
 
