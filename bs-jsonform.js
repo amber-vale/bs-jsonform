@@ -225,7 +225,7 @@ class JsonForm {
                 this._listInputHandler(id, "initialize", instance)
 
                 // Build list if we have default values
-                if (("default_value" in json)){
+                if (("default_value" in json.field) && Array.isArray(json.field.default_value)){
                     this._listInputHandler(id, "setValues", instance)
                 }
 
@@ -719,6 +719,11 @@ class JsonForm {
             // Pad rows for textarea
             if(!("rows" in json.field)) {
                 json.field.rows = "3"
+            }
+
+            // Pad maximum entries in list
+            if(!("maximum_entries" in json.field)) {
+                json.field.maximum_entries = 100
             }
 
             // Pad help text
