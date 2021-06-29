@@ -268,7 +268,7 @@ class BS4_JsonForm {
 
     // Register fields for BS4
     registerFields() {
-        const fields = ["text", "button", "input", "checkbox", "radio", "select", "submit_button"]
+        const fields = ["text", "link", "button", "input", "checkbox", "radio", "select", "submit_button"]
         this._debugMsg("Registering these fields:", fields)
         fields.forEach((fieldName) => {
             this.JsonForm.registerField(fieldName, this._fieldOnCreate.bind(this), this._fieldGetValue.bind(this), this._fieldOnUpdate.bind(this), this._fieldOnValidate.bind(this))
@@ -286,6 +286,11 @@ class BS4_JsonForm {
             // Text elements
             case "text":
                 var template = `<${config.element} classes="${config.classes}">${config.content}</${config.element}>`
+                return template
+
+            // Link elements
+            case "link":
+                var template = `<a href="${config.url}" classes="${config.classes}">${config.content}</a>`
                 return template
 
             // Button elements
