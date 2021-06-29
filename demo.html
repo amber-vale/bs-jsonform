@@ -30,10 +30,11 @@
         </nav>
 
         <!-- Content -->
-        <div style="height: 15vh"></div>
+        <div style="height: 10vh"></div>
         <div class="container">
 
-            <h2>Demos</h2>
+            <a href="demos.html" class="btn btn-secondary">Back to all demos</a>
+            <h2>Basic Form Demo</h2>
 
             <div class="row mt-5">
 
@@ -45,15 +46,32 @@
                 </div>
 
                 <div class="col-12 col-md-6">
+                    <!-- Form display card w/ options -->
                     <div class="card shadow">
                         <div class="card-body">
                             <div id="Form1"></div>
                         </div>
+                        <div class="card-footer">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="inspectFieldsToggle" onchange="toggleFieldInspection()">
+                                <label class="custom-control-label" for="inspectFieldsToggle">Inspect fields</label>
+                            </div>
+                            <div class="custom-control custom-switch mt-1">
+                                <input type="checkbox" class="custom-control-input" id="submitOnChange" onchange="toggleSubmitOnChange()">
+                                <label class="custom-control-label" for="submitOnChange">Submit on change</label>
+                            </div>
+                        </div>
                     </div>
 
-                    <h5 class="mt-5">Data</h5>
-                    <p>Upon submission, your Submit Handler will be called with a (boolean, object) arguments. Submit the form above to see the object below.</p>
-                    <pre id="Form1Data">Submit the form to see data</pre>
+                    <!-- Data display card -->
+                    <div class="card shadow mt-5">
+                        <div class="card-body">
+                            <h5 class="card-title">Data</h5>
+                            <p>When the form is submitted (or any field changes, if using <code>submit_on_change: true</code>), it will call your passed data handler function with the form, validation state and the form data.<br />Submit the form above to see the output below.</p>
+
+                            <pre id="Form1Data">Waiting for submission...</pre>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -104,8 +122,21 @@
                 ]
             }
 
-            rawJson.innerHTML = JSON.stringify(config, null, 2)
-            my_BS4_JsonForm.createForm("Form1", "Form1", config)
+            // Builds the form in the UI
+            function buildForm() {
+                rawJson.innerHTML = JSON.stringify(config, null, 2)
+                my_BS4_JsonForm.createForm("Form1", "Form1", config)
+            }
+
+            // Control super_debug status in jsonform & update form once changed
+            const inspectFieldsToggle = document.getElementById("inspectFieldsToggle")
+            function toggleFieldInspection() {
+                my_BS4_JsonForm.JsonForm.SUPER_DEBUG = inspectFieldsToggle.checked
+                console.log(inspectFieldsToggle.checked)
+                buildForm()
+            }
+
+            buildForm()
         </script>
     </body>
 </html>

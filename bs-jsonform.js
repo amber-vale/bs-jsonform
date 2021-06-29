@@ -11,11 +11,12 @@
 
 class JsonForm {
 
-    constructor(debug=false) {
+    constructor(debug=false, super_debug=false) {
         this.formInstances = {} // Stores all the form instances created
         this.themes = {} // Stores all the themes used for building fields
         this.fields = {} // Stores all the configuration for fields
-        this.DEBUG = (debug) ? true : false // Sets debug info
+        this.DEBUG = (debug || super_debug) ? true : false // Sets debug info
+        this.SUPER_DEBUG = (super_debug) ? true : false
 
         this._debugMsg("Debugging is enabled.")
     }
@@ -56,7 +57,7 @@ class JsonForm {
         // onCreate(formInstance, fieldConfig) => return the html for the field
         
         // getValue (function) = the function used to get the field value
-        // getValue(formInstance, fieldName) => return the value of the field
+        // getValue(formInstance, fieldConfig) => return the field value, if any
 
         // onUpdate (function, optional) = the function to call when the field value changes
         // onUpdate(formInstance, fieldName, value) => no return required
@@ -86,8 +87,13 @@ class JsonForm {
         // Create fields
         if (fieldType in this.fields) {
             try {
+                // If in debug: show raw JSON
+                if (this.SUPER_DEBUG) {
+                    html = `<details><summary style="opacity: 0.5" class="font-decoration-italics">'${fieldId}' (${fieldType})</summary><pre style="opacity: 1">${JSON.stringify(config, null, 2)}</pre></details>`
+                }
+
                 const onCreate = this.fields[fieldType].onCreate
-                html = onCreate(formInstance, config)
+                html += onCreate(formInstance, config)
             } catch(e) {
                 this._errorMsg(`Creating field in '${formId}' failed! Config:`, config, 'Error:', e)
 
@@ -113,13 +119,32 @@ class JsonForm {
         this._infoMsg(`Unknown field type in '${formId}': ${fieldType}. Skipping. Config:`, config)
     }
 
+    // Get field value
+    _getFieldValue(formInstance, config) {
+        const formId = formInstance.id
+        const formElem = document.getElementById(formId)
+        const fieldType = config.type
+        const fieldId = config.id
+
+        this._debugMsg(`Getting field '${fieldId}' (${fieldType}) value`)
+
+        // Verify field is registered
+        if (!(fieldType in this.fields)) {
+            this._errorMsg(`Get field value failed: Unknown type ${fieldType} for '${fieldId}'`)
+            return null
+        }
+
+        const getValue = this.fields[fieldType].getValue
+        return getValue(formInstance, config)
+    }
+
     // Create form
-    createForm(formId, formName, config) {
+    createForm(formId, formName, config, dataHandler=this.unknownDataHandler.bind(this)) {
         this._debugMsg(`Creating form with name '${formName}:'`, config)
         this.formInstances[formName] = {
             id: formId,
             name: formName,
-            original_config: config
+            config
         }
         const formInstance = this.formInstances[formName]
 
@@ -129,6 +154,7 @@ class JsonForm {
             this._errorMsg(`Element not found with #${formId}`)
             return
         }
+        formWrapper.innerHTML = ""
 
         // Create fields
         if (!config.fields) return this._errorMsg("Create Form failed: Form is missing the 'fields' key in configuration.")
@@ -136,6 +162,31 @@ class JsonForm {
             const field = config.fields[fieldIndex]
             this._createField(formInstance, field)
         }
+    }
+
+    // Gathers form data
+    gatherFormData(formName) {
+        const formInstance = this.formInstances[formName]
+        if (!formInstance) { 
+            return this._errorMsg(`Gathering form data failed: Unknown form '${formName}'`)
+        }
+
+        // Cycle through all fields and get values
+        if (!config.fields) return this._errorMsg(`Gathering form data failed: No fields for '${formName}'`)
+
+        for (const fieldIndex in config.fields) {
+            const field = config.fields[fieldIndex]
+            const fieldId = field.id
+
+            this._getFieldValue(formInstance, field)
+        }
+    }
+
+    // Handle unknown data handler
+    unknownDataHandler(formInstance, valid, data) {
+        const formName = formInstance.name
+
+        this._errorMsg(`Form '${formName}' has no registered data handler for form submission.`)
     }
 
 }
@@ -151,8 +202,8 @@ class JsonForm {
 class BS4_JsonForm {
 
 
-    constructor(debug=false) {
-        this.JsonForm = new JsonForm(debug)
+    constructor(debug=false, super_debug=false) {
+        this.JsonForm = new JsonForm(debug, super_debug)
         this.DEBUG = this.JsonForm.DEBUG // Inherits debug flag from jsonform
         this._debugMsg("Debugging is enabled.")
 
