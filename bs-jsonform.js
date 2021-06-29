@@ -30,14 +30,16 @@ class JsonForm {
     _errorMsg(...msg) {console.log("%c[jsonform] %c[ERROR]", "color:orange", "color:red", ...msg)}
 
     // Register custom theme
-    registerTheme(name, fieldClasses, feedbackClasses, additionalParams=null) {
+    registerTheme(name, fieldClasses, feedbackClasses, controlClasses, additionalParams=null) {
         // name = the theme name (used to call the theme back when building a form)
         // fieldClasses = {PerField, PerFieldWrapper, Valid, Invalid, ...} the classes used for building a field
         // feedbackClasses = {Valid, Invalid, ...} the classes used for field feedback
+        // controlClasses = {SubmitBtn, ...} the classes used for controls
         // additionalParams = {anything} used for any additional info about the theme
         this.themes[name] = {
             FieldClasses: fieldClasses,
             FeedbackClasses: feedbackClasses,
+            ControlClasses: controlClasses,
             ...additionalParams
         }
         this._debugMsg("Registered theme:", name, "Config:", this.themes[name])
@@ -82,7 +84,7 @@ class JsonForm {
         const fieldType = config.type
         const fieldId = config.id
         let html = ""
-        this._debugMsg(`Creating field in '${formId}': `, config)
+        this._debugMsg(`Creating field '${fieldId}' in '${formId}': `, config)
 
         // Create fields
         if (fieldType in this.fields) {
@@ -143,6 +145,7 @@ class JsonForm {
         this._debugMsg(`Creating form with name '${formName}:'`, config)
         this.formInstances[formName] = {
             id: formId,
+            htmlFormId: formId + "-JsonForm",
             name: formName,
             config
         }
@@ -155,13 +158,49 @@ class JsonForm {
             return
         }
         formWrapper.innerHTML = ""
+        // Check if form is a <form> tag
+        if (formWrapper.tagName != "FORM") {
+            this._errorMsg(`Element '${formId}' is not a form.`)
+            if (this.SUPER_DEBUG) {
+                formWrapper.innerHTML = `<p style="color: red; background: white;">JsonForm Error: This (#${formId} - ${formWrapper.tagName}) element is not a form tag. You are seeing this because SUPER_DEBUG is enabled.</p>`
+            }
+            return
+        }
 
         // Create fields
         if (!config.fields) return this._errorMsg("Create Form failed: Form is missing the 'fields' key in configuration.")
+        let detectedSubmitBtn = false
         for (const fieldIndex in config.fields) {
             const field = config.fields[fieldIndex]
+            const fieldId = `${formId}-${field.id}`
             this._createField(formInstance, field)
+
+            // Handle speciality types
+            switch(field.type) {
+                // Detect if we created a submit button
+                case "button":
+                    if (field.config.type != "submit") break
+                    detectedSubmitBtn = true
+                    break
+            }
         }
+
+        // Create submit button, if it wasn't done automatically
+        // TODO: Maybe controlled by root config key in the future?
+        this._debugMsg("Detected a submit button during form build?", detectedSubmitBtn)
+        if (!detectedSubmitBtn) {
+            this._createField(formInstance, {
+                id: "submit_button",
+                type: "submit_button", 
+            })
+        }
+        
+        // Add submit handler
+        formWrapper.addEventListener("submit", (e) => {
+            this.submitForm(formName);
+            e.preventDefault();
+            return false;
+        })
     }
 
     // Gathers form data
@@ -182,6 +221,11 @@ class JsonForm {
         }
     }
 
+    // Perform form "submit"
+    submitForm(formName) {
+        this.gatherFormData(formName)
+    }
+
     // Handle unknown data handler
     unknownDataHandler(formInstance, valid, data) {
         const formName = formInstance.name
@@ -200,7 +244,6 @@ class JsonForm {
     Or if you use BS4 in your application then it is all ready to go.
 */
 class BS4_JsonForm {
-
 
     constructor(debug=false, super_debug=false) {
         this.JsonForm = new JsonForm(debug, super_debug)
@@ -225,7 +268,7 @@ class BS4_JsonForm {
 
     // Register fields for BS4
     registerFields() {
-        const fields = ["text", "button", "input", "checkbox", "radio", "select"]
+        const fields = ["text", "button", "input", "checkbox", "radio", "select", "submit_button"]
         this._debugMsg("Registering these fields:", fields)
         fields.forEach((fieldName) => {
             this.JsonForm.registerField(fieldName, this._fieldOnCreate.bind(this), this._fieldGetValue.bind(this), this._fieldOnUpdate.bind(this), this._fieldOnValidate.bind(this))
@@ -247,7 +290,12 @@ class BS4_JsonForm {
 
             // Button elements
             case "button":
-                var template = `<button type="${config.type}" class="${config.classes}">${config.content}</button>`
+                var template = `<button id="${fieldId}" type="${config.type}" class="${config.classes}">${config.content}</button>`
+                return template
+
+            // Speciality button: Submit
+            case "submit_button":
+                var template = `<button id="${fieldId} type="submit" class="btn btn-primary w-100">Submit</button>`
                 return template
                 
             // Input fields
