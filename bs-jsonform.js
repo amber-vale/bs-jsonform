@@ -37,9 +37,9 @@ class JsonForm {
         // controlClasses = {SubmitBtn, ...} the classes used for controls
         // additionalParams = {anything} used for any additional info about the theme
         this.themes[name] = {
-            FieldClasses: fieldClasses,
-            FeedbackClasses: feedbackClasses,
-            ControlClasses: controlClasses,
+            fieldClasses,
+            feedbackClasses,
+            controlClasses,
             ...additionalParams
         }
         this._debugMsg("Registered theme:", name, "Config:", this.themes[name])
@@ -91,7 +91,7 @@ class JsonForm {
             try {
                 // If in debug: show raw JSON
                 if (this.SUPER_DEBUG) {
-                    html = `<details><summary style="opacity: 0.5" class="font-decoration-italics">'${fieldId}' (${fieldType})</summary><pre style="opacity: 1">${JSON.stringify(config, null, 2)}</pre></details>`
+                    html = `<details class="col-12"><summary style="opacity: 0.5" class="font-decoration-italics">'${fieldId}' (${fieldType})</summary><pre style="opacity: 1">${JSON.stringify(config, null, 2)}</pre></details>`
                 }
 
                 const onCreate = this.fields[fieldType].onCreate
@@ -102,7 +102,7 @@ class JsonForm {
                 // Show message in DOM if in debug mode
                 if (this.DEBUG) {
                     html = `
-                    <div><details><summary><strong>Error while creating field: ${fieldId} (${fieldType}).</strong></summary>This is only shown in debug mode.<pre>${JSON.stringify(config, null, 2)}</pre></div>
+                    <div class="col-12"><details><summary><strong>Error while creating field: ${fieldId} (${fieldType}).</strong></summary>This is only shown in debug mode.<pre>${JSON.stringify(config, null, 2)}</pre></div>
                     `
                 }
             }
@@ -147,6 +147,7 @@ class JsonForm {
             id: formId,
             htmlFormId: formId + "-JsonForm",
             name: formName,
+            dataHandler,
             config
         }
         const formInstance = this.formInstances[formName]
@@ -166,6 +167,9 @@ class JsonForm {
             }
             return
         }
+
+        // Enable BS row system
+        formWrapper.classList.add("row")
 
         // Create fields
         if (!config.fields) return this._errorMsg("Create Form failed: Form is missing the 'fields' key in configuration.")
@@ -197,8 +201,8 @@ class JsonForm {
         
         // Add submit handler
         formWrapper.addEventListener("submit", (e) => {
-            this.submitForm(formName);
             e.preventDefault();
+            this.submitForm(formName);
             return false;
         })
     }
@@ -213,17 +217,26 @@ class JsonForm {
         // Cycle through all fields and get values
         if (!config.fields) return this._errorMsg(`Gathering form data failed: No fields for '${formName}'`)
 
+        let formData = {}
         for (const fieldIndex in config.fields) {
             const field = config.fields[fieldIndex]
             const fieldId = field.id
 
-            this._getFieldValue(formInstance, field)
+            const fieldValue = this._getFieldValue(formInstance, field)
+            formData[fieldId] = fieldValue
         }
+
+        return formData
     }
 
     // Perform form "submit"
     submitForm(formName) {
-        this.gatherFormData(formName)
+        const formInstance = this.formInstances[formName]
+
+        let isValid = true
+        const formData = this.gatherFormData(formName)
+
+        formInstance.dataHandler(formInstance, isValid, formData)
     }
 
     // Handle unknown data handler
@@ -255,6 +268,7 @@ class BS4_JsonForm {
 
         // Initialize 
         this.registerFields()
+        this.registerTheme()
     }
 
     // Some helper functions for making pretty console messages
@@ -268,10 +282,39 @@ class BS4_JsonForm {
 
     // Register fields for BS4
     registerFields() {
-        const fields = ["text", "link", "button", "input", "checkbox", "radio", "select", "submit_button"]
+        const fields = ["text", "link", "button", "input", "checkbox", "radio", "select", "switch", "submit_button"]
         this._debugMsg("Registering these fields:", fields)
         fields.forEach((fieldName) => {
             this.JsonForm.registerField(fieldName, this._fieldOnCreate.bind(this), this._fieldGetValue.bind(this), this._fieldOnUpdate.bind(this), this._fieldOnValidate.bind(this))
+        })
+    }
+
+    // Registers the theme
+    registerTheme() {
+        // Normal size BS4 theme
+        this.JsonForm.registerTheme("BS4", 
+        { // Field
+            wrapperClasses: "mb-2",
+            inputClasses: "mb-2"
+        }, 
+        { // Feedback
+            muted: "text-muted"
+        },
+        { // Control
+            submitBtnClasses: "btn btn-primary w-100 mb-n2 mt-2"
+        })
+
+        // Some specific compact options
+        this.JsonForm.registerTheme("BS4_compact", 
+        { // Field
+            wrapperClasses: "mb-1",
+            inputClasses: "mb-1"
+        },
+        { // Feedback
+            muted: "text-muted"
+        },
+        { // Control
+            submitBtnClasses: "btn btn-primary w-100 mb-n3 mt-1"
         })
     }
 
@@ -280,32 +323,48 @@ class BS4_JsonForm {
         const formId = formInstance.id
         const fieldId = `${formId}-${fieldPayload.id}`
         const config = fieldPayload.config
+        const themeName = formInstance.config.use_bs4_compact_theme ? "BS4_compact" : "BS4"
+        const theme = this.JsonForm.getTheme(themeName)
+        let colSize = 12
         this._debugMsg(`Creating field for form ${formId} - Payload:`, fieldPayload)
 
+        // Determine width
+        if (fieldPayload.width) {
+            const width = fieldPayload.width
+            // Make sure width is greater than or equal to 1 and less than or equal to 12
+            // ... to match BS limits
+            if (1 <= width <= 12) {
+                colSize = width
+            }
+        }
+
+        // Determine what template to use
+        let template = `<div class="${theme.fieldClasses.wrapperClasses} col-${colSize}">`;
+        let sublabel;
         switch (fieldPayload.type) {
             // Text elements
             case "text":
-                var template = `<${config.element} classes="${config.classes}">${config.content}</${config.element}>`
-                return template
+                template += `<${config.element} class="${config.classes}">${config.content}</${config.element}>`
+                break
 
             // Link elements
             case "link":
-                var template = `<a href="${config.url}" classes="${config.classes}">${config.content}</a>`
-                return template
+                template += `<a href="${config.url}" class="${config.classes}">${config.content}</a>`
+                break
 
             // Button elements
             case "button":
-                var template = `<button id="${fieldId}" type="${config.type}" class="${config.classes}">${config.content}</button>`
-                return template
+                template += `<button id="${fieldId}" type="${config.type}" class="${config.classes}">${config.content}</button>`
+                break
 
             // Speciality button: Submit
             case "submit_button":
-                var template = `<button id="${fieldId} type="submit" class="btn btn-primary w-100">Submit</button>`
-                return template
+                template += `<button id="${fieldId} type="submit" class="${theme.controlClasses.submitBtnClasses}">Submit</button>`
+                break
                 
             // Input fields
             case "input":
-                var template = `<div class='form-group'>`
+                template += `<div class='form-group ${theme.fieldClasses.inputClasses}'>`
 
                 // Above field elements
                 // If label:
@@ -322,13 +381,69 @@ class BS4_JsonForm {
                 if (config.sublabel) template += `<small id="${fieldId}-sublabel" class="form-text text-muted">${config.sublabel}</small>`
 
                 template += `</div>`
-                return template
+                break
+
+            // Checkbox
+            case "checkbox":
+                // Handle sublabel
+                if (config.sublabel) {
+                    sublabel = `<br /><span class='${theme.feedbackClasses.muted}'>${config.sublabel}</span>`
+                }
+
+                // Build actual checkbox dom
+                template += `
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="${fieldId}">
+                    <label class="custom-control-label" for="${fieldId}">${config.label}${sublabel}</label>
+                </div>
+                `
+                break
+
+            // Switch
+            case "switch":
+                // Handle sublabel
+                if (config.sublabel) {
+                    sublabel = `<br /><span class='${theme.feedbackClasses.muted}'>${config.sublabel}</span>`
+                }
+
+                // Build switch
+                template += `
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="${fieldId}">
+                    <label class="custom-control-label" for="${fieldId}">${config.label}${sublabel}</label>
+                </div>`
+                break
         }
+        template += `</div>`
+
+        return template
     }
 
     // Handles getting a field value
-    _fieldGetValue(formInstance, fieldName) {
-        this._debugMsg(`Getting field value: '${fieldName}' from form '${formInstance}'`)
+    _fieldGetValue(formInstance, fieldPayload) {
+        const formId = formInstance.id
+        const fieldId = `${formId}-${fieldPayload.id}`
+        const fieldIdAsElem = document.getElementById(fieldId)
+        const config = fieldPayload.config
+
+        this._debugMsg(`Getting field value: '${fieldId}' from form '${formId}'`, fieldPayload, formInstance)
+
+        // Gather the field value
+        let value = undefined;
+        switch (fieldPayload.type) {
+            // Handle inputs
+            case "input":
+                value = fieldIdAsElem.value
+                break
+            // Handle checkboxes & switches
+            case "switch":
+            case "checkbox":
+                value = fieldIdAsElem.checked
+                break
+        }
+
+        this._debugMsg(`Field '${fieldId}' = '${value}' in form '${formId}'`)
+        return value
     }
 
     // Handles a field value changing

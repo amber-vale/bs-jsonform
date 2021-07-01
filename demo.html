@@ -56,10 +56,10 @@
                                 <input type="checkbox" class="custom-control-input" id="inspectFieldsToggle" onchange="toggleFieldInspection()">
                                 <label class="custom-control-label" for="inspectFieldsToggle">Inspect fields</label>
                             </div>
-                            <div class="custom-control custom-switch mt-1">
+                            <!-- <div class="custom-control custom-switch mt-1">
                                 <input type="checkbox" class="custom-control-input" id="submitOnChange" onchange="toggleSubmitOnChange()">
                                 <label class="custom-control-label" for="submitOnChange">Submit on change</label>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
 
@@ -67,9 +67,16 @@
                     <div class="card shadow mt-5">
                         <div class="card-body">
                             <h5 class="card-title">Data</h5>
-                            <p>When the form is submitted (or any field changes, if using <code>submit_on_change: true</code>), it will call your passed data handler function with the form, validation state and the form data.<br />Submit the form above to see the output below.</p>
+                            <p>When the form is submitted it will call your passed data handler function with the form instance, validation state and the form data.<br />Submit the form above to see the output below.</p>
 
-                            <pre id="Form1Data">Waiting for submission...</pre>
+                            <h6>Form Data</h6>
+                            <p id="Form1Status" class="mb-1">Status unknown</p>
+                            <pre id="Form1Data" class="px-2">Waiting for submission...</pre>
+
+                            <details>
+                                <summary>Form Instance</summary>
+                                <pre id="Form1Instance" class="px-2 mb-0 mt-2">Waiting for submission...</pre>
+                            </details>
                         </div>
                     </div>
 
@@ -87,6 +94,9 @@
         <script>
             const my_BS4_JsonForm = new BS4_JsonForm(true)
             const rawJson = document.getElementById("rawJson")
+            const Form1Data = document.getElementById("Form1Data")
+            const Form1Instance = document.getElementById("Form1Instance")
+            const Form1Status = document.getElementById("Form1Status")
 
             const config = {
                 fields: [
@@ -112,10 +122,34 @@
                     {
                         id: "first_name",
                         type: "input",
+                        width: 6,
                         config: {
                             label: "What is your first name?",
-                            placeholder: "Bob",
-                            sublabel: "We will use this to personalize your experience"
+                            placeholder: "Bob"
+                        }
+                    },
+                    {
+                        id: "last_name",
+                        type: "input",
+                        width: 6,
+                        config: {
+                            label: "What is your last name?",
+                            placeholder: "Smith"
+                        }
+                    },
+                    {
+                        id: "enable_easter_eggs",
+                        type: "switch",
+                        config: {
+                            label: "Turn on easter eggs?",
+                            sublabel: "Shows some super cool hidden features :)"
+                        }
+                    },
+                    {
+                        id: "very_cool_person",
+                        type: "checkbox",
+                        config: {
+                            label: "I am a cool person"
                         }
                     }
                 ]
@@ -124,7 +158,14 @@
             // Builds the form in the UI
             function buildForm() {
                 rawJson.innerHTML = JSON.stringify(config, null, 2)
-                my_BS4_JsonForm.createForm("Form1", "Form1", config)
+                my_BS4_JsonForm.createForm("Form1", "Form1", config, handleData)
+            }
+
+            // Handle the data from the form instance
+            function handleData(formInstance, isValid, formData) {
+                Form1Status.innerText = isValid ? "Form valid!" : "Form invalid! :("
+                Form1Instance.innerHTML = JSON.stringify(formInstance, null, 2)
+                Form1Data.innerHTML = JSON.stringify(formData, null, 2)
             }
 
             // Control super_debug status in jsonform & update form once changed
