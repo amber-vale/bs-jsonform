@@ -52,7 +52,7 @@ class JsonForm {
     }
 
     // Register field
-    registerField(name, onCreate, getValue=null, onUpdate=null, onValidate=null) {
+    registerField(name, onCreate, getValue=null, onUpdate=null, onValidate=null, onStatusChange=null) {
         // name (string) = field name (eg: selectUser)
         
         // onCreate (function) = the function to call to create the field
@@ -61,17 +61,21 @@ class JsonForm {
         // getValue (function) = the function used to get the field value
         // getValue(formInstance, fieldConfig) => return the field value, if any
 
-        // onUpdate (function, optional) = the function to call when the field value changes
+        // onUpdate (function) = the function to call when the field value changes
         // onUpdate(formInstance, fieldName, value) => no return required
         
-        // onValidate (function, optional) = the function to allow the registrar validate an input
+        // onValidate (function) = the function to allow the registrar validate an input
         // onValidate(formInstance, fieldName, value) => return {isValid: boolean, message: string}
+
+        // onStatusChange (function) = the function to allow the JsonForm core to perform status changes (such as disable, invalid, valid, loading)
+        // onStatusChange(formInstance, fieldConfig, statusPayload) => perform actions, no return required
 
         this.fields[name] = {
             onCreate,
             getValue,
             onUpdate,
-            onValidate
+            onValidate,
+            onStatusChange
         }
 
         this._debugMsg("Registered field:", name, "Config:", this.fields[name])
@@ -157,6 +161,25 @@ class JsonForm {
 
         const onValidate = this.fields[fieldType].onValidate
         return onValidate(formInstance, config, value)
+    }
+
+    // Trigger status update
+    _updateFieldStatus(formInstance, config, statusPayload) {
+        const formId = formInstance.id
+        const formElem = document.getElementById(formId)
+        const fieldType = config.type
+        const fieldId = config.id
+
+        this._debugMsg(`Updating status field '${fieldId}' (${fieldType}) = `, statusPayload)
+
+        // Verify field is registered
+        if (!(fieldType in this.fields)) {
+            this._errorMsg(`Update status field failed: Unknown type ${fieldType} for '${fieldId}'`)
+            return null
+        }
+
+        const onValidate = this.fields[fieldType].onStatusChange
+        return onStatusChange(formInstance, config, statusPayload)
     }
 
     // Create form
@@ -356,7 +379,7 @@ class BS4_JsonForm {
         const fields = ["text", "link", "button", "input", "checkbox", "radio", "select", "switch", "submit_button"]
         this._debugMsg("Registering these fields:", fields)
         fields.forEach((fieldName) => {
-            this.JsonForm.registerField(fieldName, this._fieldOnCreate.bind(this), this._fieldGetValue.bind(this), this._fieldOnUpdate.bind(this), this._fieldOnValidate.bind(this))
+            this.JsonForm.registerField(fieldName, this._fieldOnCreate.bind(this), this._fieldGetValue.bind(this), this._fieldOnUpdate.bind(this), this._fieldOnValidate.bind(this), this._fieldOnStatusChange.bind(this))
         })
     }
 
@@ -556,6 +579,11 @@ class BS4_JsonForm {
     // Handles a field value changing
     _fieldOnUpdate(formInstance, fieldName, value) {
         this._debugMsg(`Updating field value: '${fieldName}' => ${value} from form '${formInstance}'`)
+    }
+
+    // Handles a field status changing (disabled, valid, invalid, etc)
+    _fieldOnStatusChange(formInstance, fieldPayload, statusPayload) {
+
     }
 
 }
