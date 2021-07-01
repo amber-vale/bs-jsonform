@@ -64,8 +64,8 @@ class JsonForm {
         // onUpdate (function, optional) = the function to call when the field value changes
         // onUpdate(formInstance, fieldName, value) => no return required
         
-        // onValidate (function, optional) = the function to help validate an input
-        // onValidate(formInstance, fieldName, value) => return {valid: boolean, message: string}
+        // onValidate (function, optional) = the function to allow the registrar validate an input
+        // onValidate(formInstance, fieldName, value) => return {isValid: boolean, message: string}
 
         this.fields[name] = {
             onCreate,
@@ -138,6 +138,25 @@ class JsonForm {
 
         const getValue = this.fields[fieldType].getValue
         return getValue(formInstance, config)
+    }
+
+    // Perform field validation
+    _validateFieldValue(formInstance, config, value) {
+        const formId = formInstance.id
+        const formElem = document.getElementById(formId)
+        const fieldType = config.type
+        const fieldId = config.id
+
+        this._debugMsg(`Validating field '${fieldId}' (${fieldType}) value`)
+
+        // Verify field is registered
+        if (!(fieldType in this.fields)) {
+            this._errorMsg(`Validate field value failed: Unknown type ${fieldType} for '${fieldId}'`)
+            return null
+        }
+
+        const onValidate = this.fields[fieldType].onValidate
+        return onValidate(formInstance, config, value)
     }
 
     // Create form
@@ -229,14 +248,66 @@ class JsonForm {
         return formData
     }
 
+    // Validate form data
+    validateFormData(formName, formData) {
+        const formInstance = this.formInstances[formName]
+        if (!formInstance) { 
+            return this._errorMsg(`Validating form data failed: Unknown form '${formName}'`)
+        }
+
+        // Cycle through all fields and validate here & within the field registrar
+        if (!config.fields) return this._errorMsg(`Validating form data failed: No fields for '${formName}'`)
+
+        // Some special notes here:
+        // 'undefined' in formdata = No support for getting a value (such as text elements)
+        // '' or 'null' in formdata = No response, but valid for getting a value
+
+        let validationStates = {}
+        let formValid = true
+        for (const fieldIndex in config.fields) {
+            const field = config.fields[fieldIndex]
+            const fieldId = field.id
+
+            const value = formData[fieldId]
+
+            if (value === undefined) continue // Skips undefined data
+
+            var isValid = false
+            var message = "No validation was performed"
+            //
+            // PERFORM LOCAL VALIDATION HERE
+            //
+
+            // Pass to field registrar to perform it's own validation (if necessary)
+            const registrarValidationState = this._validateFieldValue(formInstance, field, value)
+            if (!registrarValidationState.isValid) {
+                isValid = false
+                message = registrarValidationState.message
+            }
+
+            // Update data
+            validationStates[fieldId] = {isValid, message}
+            this._debugMsg(`Field '${fieldId}' in form '${formName}' validated: Valid? ${isValid}: ${message}`)
+            // Set form validation status
+            if (!isValid) formValid = false
+
+            // Update UI
+            // TODO
+        }
+
+        this._debugMsg(`Form ${formName} validated: Valid? ${isValid}`)
+        return {valid: formValid, validationStates}
+    }
+
     // Perform form "submit"
     submitForm(formName) {
         const formInstance = this.formInstances[formName]
-
-        let isValid = true
+        // Gather
         const formData = this.gatherFormData(formName)
-
-        formInstance.dataHandler(formInstance, isValid, formData)
+        // Validate
+        const validate = this.validateFormData(formName, formData)
+        // Give back
+        formInstance.dataHandler(formInstance, validate.valid, formData)
     }
 
     // Handle unknown data handler
@@ -446,14 +517,45 @@ class BS4_JsonForm {
         return value
     }
 
+    // Handles validating a field value
+    _fieldOnValidate(formInstance, fieldPayload, value) {
+        const formId = formInstance.id
+        const fieldId = `${formId}-${fieldPayload.id}`
+        const fieldIdAsElem = document.getElementById(fieldId)
+        const config = fieldPayload.config
+
+        this._debugMsg(`Validating field value: '${fieldId}' = '${value}' from form '${formId}'`, fieldPayload, formInstance)
+
+        // Validate the value
+        let isValid = false
+        let message = "No validation was performed"
+        switch (fieldPayload.type) {
+            // Handle non-data specific ones
+            case "text":
+            case "link":
+                isValid = true
+                message = "Unsupported"
+                break;
+            // Handle inputs
+            case "input":
+                isValid = true
+                message = "To be implemented"
+                break
+            // Handle checkboxes & switches
+            case "switch":
+            case "checkbox":
+                isValid = true
+                message = "To be implemented"
+                break
+        }
+
+        this._debugMsg(`Validated Field '${fieldId}' = '${value}' in form '${formId}'. Valid? ${isValid}: ${message}`)
+        return {isValid, message}
+    }
+
     // Handles a field value changing
     _fieldOnUpdate(formInstance, fieldName, value) {
         this._debugMsg(`Updating field value: '${fieldName}' => ${value} from form '${formInstance}'`)
-    }
-
-    // Handles a field being validated
-    _fieldOnValidate(formInstance, fieldName) {
-        this._debugMsg(`Validating field: '${fieldName}' from form '${formInstance}'`)
     }
 
 }
