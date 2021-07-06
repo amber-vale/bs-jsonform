@@ -392,7 +392,9 @@ class BS4_JsonForm {
             inputClasses: "mb-2"
         }, 
         { // Feedback
-            muted: "text-muted"
+            muted: "text-muted",
+            invalid: "is-invalid",
+            valid: "is-valid"
         },
         { // Control
             submitBtnClasses: "btn btn-primary w-100 mb-n2 mt-2"
@@ -405,7 +407,9 @@ class BS4_JsonForm {
             inputClasses: "mb-1"
         },
         { // Feedback
-            muted: "text-muted"
+            muted: "text-muted",
+            invalid: "is-invalid",
+            valid: "is-valid"
         },
         { // Control
             submitBtnClasses: "btn btn-primary w-100 mb-n3 mt-1"
@@ -434,7 +438,7 @@ class BS4_JsonForm {
 
         // Determine what template to use
         let template = `<div class="${theme.fieldClasses.wrapperClasses} col-${colSize}">`;
-        let sublabel;
+        let sublabel = "";
         switch (fieldPayload.type) {
             // Text elements
             case "text":
@@ -583,6 +587,13 @@ class BS4_JsonForm {
 
     // Handles a field status changing (disabled, valid, invalid, etc)
     _fieldOnStatusChange(formInstance, fieldPayload, statusPayload) {
+        const formId = formInstance.id
+        const fieldId = `${formId}-${fieldPayload.id}`
+        const fieldIdAsElem = document.getElementById(fieldId)
+        const config = fieldPayload.config
+
+        this._debugMsg(`Changing status on field '${fieldName}' from form '${formInstance}' with payload: `, statusPayload)
+
 
     }
 
