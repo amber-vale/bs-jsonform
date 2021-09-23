@@ -790,7 +790,7 @@ class JsonForm {
                 // Determine if we need to gen DOM
                 if (!("fields" in fieldInstance.field)) {
                     template = `
-                    <div class="col-10">
+                    <div class="`+fieldInstance.field.field_wrapper_override+`">
                         <input id="`+id+`-AddInput-0" type="`+fieldInstance.field.type+`" placeholder="`+fieldInstance.field.placeholder+`" class="form-control"></input> 
                     </div>`
                 } else {
@@ -798,17 +798,14 @@ class JsonForm {
                     template = ``
                     width = Math.floor(10 / (fieldInstance.field.fields.length - offset))
                     fieldInstance.field.fields.forEach((item, index) => {
-                        item.field.width = width
+                        item.field.width = (fieldInstance.field.field_wrapper_override) ? fieldInstance.field.field_wrapper_override : width;
                         var domId = id+"-AddInput-"+index
                         item = this._padFieldJson(item)
                         template += this._getFieldTemplate(domId, item, false, "mb-0")
                     })
                 }
 
-                var addBtnClass = "col-2"
-                if (width == 3) {
-                    addBtnClass = "col-3"
-                }
+                var addBtnClass = (fieldInstance.field.btn_override) ? fieldInstance.field.btn_override : "col-2"
 
                 template += `
                 <div class="`+addBtnClass+`">
