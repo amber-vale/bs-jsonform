@@ -861,12 +861,12 @@ class JsonForm {
                 } else {
                     fieldInstance.field.ct += 1
                 }
-                
+
                 var template = ''
                 // Determine if we need to gen DOM
                 if (!("fields" in fieldInstance.field)) {
                     template = `
-                    <div class="col-10 mb-3">
+                    <div class="`+fieldInstance.field.field_wrapper_override+`">
                         <input id="`+id+`-ItemInput-0-`+fieldInstance.field.ct+`" type="`+fieldInstance.field.type+`" placeholder="`+fieldInstance.field.placeholder+`" class="form-control" value="`+values[0]+`"></input> 
                     </div>`
                     $(document).on("change", "#"+id+"-ItemInput-0-"+fieldInstance.field.ct, () => {
@@ -889,13 +889,13 @@ class JsonForm {
                     })
                 }
 
-                var btnClass = "col-2"
+                var rmBtnClass = (fieldInstance.field.btn_override) ? fieldInstance.field.btn_override : "col-2"
                 if (width == 3) {
-                    btnClass = "col-3"
+                    rmBtnClass = (fieldInstance.field.btn_override) ? fieldInstance.field.btn_override : "col-3"
                 }
 
                 template += `
-                    <div class="`+btnClass+`" id="`+id+`-`+fieldInstance.field.ct+`-RmWrapper">
+                    <div class="`+rmBtnClass+`" id="`+id+`-`+fieldInstance.field.ct+`-RmWrapper">
                         <button id="`+id+`-`+fieldInstance.field.ct+`-RmBtn" type="button" class="w-100 btn btn-danger" x-ct="`+fieldInstance.field.ct+`">&times;</button>
                     </div>
                 `
@@ -957,12 +957,14 @@ class JsonForm {
                     } else {
                         fieldInstance.field.ct += 1
                     }
+
+                    var addBtnClass = (fieldInstance.field.btn_override) ? fieldInstance.field.btn_override : "col-2"
                     
                     var template = ''
                     // Determine if we need to gen DOM
                     if (!("fields" in fieldInstance.field)) {
                         template = `
-                        <div class="col-10 mb-3">
+                        <div class="`+fieldInstance.field.field_wrapper_override+`">
                             <input id="`+id+`-ItemInput-0-`+fieldInstance.field.ct+`" type="`+fieldInstance.field.type+`" placeholder="`+fieldInstance.field.placeholder+`" class="form-control" value="`+values[0]+`"></input> 
                         </div>`
                         $(document).on("change", "#"+id+"-ItemInput-0-"+fieldInstance.field.ct, () => {
@@ -985,16 +987,16 @@ class JsonForm {
                         })
                     }
 
-                    var btnClass = "col-2"
+                    var rmBtnClass = (fieldInstance.field.btn_override) ? fieldInstance.field.btn_override : "col-2"
                     if (width == 3) {
-                        btnClass = "col-3"
+                        rmBtnClass = (fieldInstance.field.btn_override) ? fieldInstance.field.btn_override : "col-3"
                     }
 
                     var btnDisabled = ""
                     if (fieldInstance.field.readonly){btnDisabled = "disabled"}
 
                     template += `
-                        <div class="`+btnClass+`" id="`+id+`-`+fieldInstance.field.ct+`-RmWrapper">
+                        <div class="`+rmBtnClass+`" id="`+id+`-`+fieldInstance.field.ct+`-RmWrapper">
                             <button id="`+id+`-`+fieldInstance.field.ct+`-RmBtn" type="button" class="w-100 btn btn-danger" x-ct="`+fieldInstance.field.ct+`" `+btnDisabled+`>&times;</button>
                         </div>
                     `
